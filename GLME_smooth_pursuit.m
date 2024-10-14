@@ -33,6 +33,7 @@ dispi('Loaded file ',file);
 % Normalize variable formats
 data.subject_ID = categorical(data.subject_ID);
 data.status = categorical(data.status);
+data = clean_names(data);
 
 % show a sample of the data
 disp('Data sample and size:')
@@ -52,7 +53,7 @@ disp('Data are not distributed differently than normal')
 saveas(gcf,fullfile(figure_path,'dprime_distribution.fig')); snapnow;
 % Only apply the collinearity analysis on continuous predictors
 % Use Kendall correlations that are more powerful when using small samples
-corrplot2(data(:,{'eccentricity','fraction_occluded','ocm'}),'type','Kendall')
+corrplot2(data(:,{'eccentricity','fractionOccluded','ocm'}),'type','Kendall')
 disp('No particular worries for collinearity but keep in mind the correlation between ecc and ocm.')
 saveas(gcf,fullfile(figure_path,'factor_collinearity.fig')); snapnow;
 
@@ -65,9 +66,9 @@ model.dv = 'dprime';
 model.distribution = 'normal';
 % the maximal nb of factors to explore in the model
 model.max_nb_factors = 4; % n=10 so 100 data are used to estimate subjects' random effects (1 factor). 16 data can be used to estimate 2 more factors - we add 1 so that we can also look at the effect of non-significant factors.
-model.solid_factors = {'(1|subject_ID)'}; %keep these between {}
+model.solid_factors = {'(1|subjectID)'}; %keep these between {}
 % a list of possible factors to be included, that can be removed if needed, and the interactions terms to explore
-model.liquid_factors = {'eccentricity','ocm','fraction_occluded','fraction_occluded:ocm','eccentricity:ocm','fraction_occluded:eccentricity'}; %keep these between {}
+model.liquid_factors = {'eccentricity','ocm','fractionOccluded','fractionOccluded:ocm','eccentricity:ocm','fractionOccluded:eccentricity'}; %keep these between {}
 % a list of potential model links
 model.links = {'identity'};
 % outliers/subjects to be removed - can be left empty
@@ -83,7 +84,7 @@ mdls = all_glm(model);
 % display diagnostics and results
 display_model(mdls{1}, model) %plot model ranked 1 - you can select any other models by rank according to the results on the various indicators provided
 saveas(gcf,fullfile(figure_path,'dprime_GLME_diagnostics.fig')); snapnow;
-h=subplot(1,2,1);       plot_covariate_effect(data.dprime, data.fraction_occluded, h, 'fraction occluded', 'd prime', 0, 0, mdls{1},1,model);
+h=subplot(1,2,1);       plot_covariate_effect(data.dprime, data.fractionOccluded, h, 'fraction occluded', 'd prime', 0, 0, mdls{1},1,model);
 h=subplot(1,2,2);       plot_covariate_effect(data.dprime, data.eccentricity, h, 'eccentricity (deg)', 'd prime', 0, 0, mdls{1},1,model);
 disp('Interpretation: there is mostly a large effect of fraction occluded. There is also a small effect of eccentricity.')
 disp('Larger eccentricities and fraction occluded are associated with worse d'' results.')
