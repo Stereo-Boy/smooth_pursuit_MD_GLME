@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>Smooth pursuit in macular degeneration</title><meta name="generator" content="MATLAB 9.14"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2024-10-14"><meta name="DC.source" content="GLME_smooth_pursuit.m"><style type="text/css">
+      --><title>Smooth pursuit in macular degeneration</title><meta name="generator" content="MATLAB 9.14"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2024-10-21"><meta name="DC.source" content="GLME_smooth_pursuit.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -132,7 +132,7 @@ model.liquid_factors = {<span class="string">'eccentricity'</span>,<span class="
 <span class="comment">% a list of potential model links</span>
 model.links = {<span class="string">'identity'</span>};
 <span class="comment">% outliers/subjects to be removed - can be left empty</span>
-model.exclude = [];
+model.exclude = [98,107,110]; <span class="comment">% exclude the 3 instances for which participants did not follow pursuit instructions</span>
 <span class="comment">% no warnings if 1 - careful with that option</span>
 model.warning_off = 0;
 <span class="comment">% whether to use a GLM (0) or a GLME (1).</span>
@@ -144,11 +144,14 @@ mdls = all_glm(model);
 <span class="comment">% display diagnostics and results</span>
 display_model(mdls{1}, model) <span class="comment">%plot model ranked 1 - you can select any other models by rank according to the results on the various indicators provided</span>
 saveas(gcf,fullfile(figure_path,<span class="string">'dprime_GLME_diagnostics.fig'</span>)); snapnow;
-h=subplot(1,2,1);       plot_covariate_effect(data.dprime, data.fractionOccluded, h, <span class="string">'fraction occluded'</span>, <span class="string">'d prime'</span>, 0, 0, mdls{1},1,model);
-h=subplot(1,2,2);       plot_covariate_effect(data.dprime, data.eccentricity, h, <span class="string">'eccentricity (deg)'</span>, <span class="string">'d prime'</span>, 0, 0, mdls{1},1,model);
-disp(<span class="string">'Interpretation: there is mostly a large effect of fraction occluded. There is also a small effect of eccentricity.'</span>)
-disp(<span class="string">'Larger eccentricities and fraction occluded are associated with worse d'' results.'</span>)
-disp(<span class="string">'OCM''s effect is dubious.'</span>)
+h=subplot(1,3,1);       plot_covariate_effect(data.dprime, data.fractionOccluded.*100, h, <span class="string">'fraction occluded (%)'</span>, <span class="string">'d prime'</span>, 0, 0, mdls{1},1,model);
+h=subplot(1,3,2);       plot_covariate_effect(data.dprime, data.eccentricity, h, <span class="string">'eccentricity (deg)'</span>, <span class="string">'d prime'</span>, 0, 0, mdls{1},1,model);
+h=subplot(1,3,3); plot_interaction(data.dprime, (data.eccentricity&lt;=median(data.eccentricity)),data.fractionOccluded.*100, h, <span class="string">'fraction occluded (%)'</span>,<span class="string">'d prime'</span>, {<span class="string">'eccentricity &gt; median'</span>,<span class="string">'eccentricity &lt;= median'</span>},mdls{1}, 1, model); <span class="comment">% median is 2.36</span>
+disp(<span class="string">'The first model is undeniably the best fit for the data with best AIC but also best adj. R2 and best R2.'</span>)
+disp(<span class="string">'Interpretation: there is mostly a medium effect of fraction occluded. There is also a small effect of eccentricity and a small interaction effect between them.'</span>)
+disp(<span class="string">'Larger eccentricities and fraction occluded are associated with worse d'' results, but for higher fraction occluded, eccentricity effects decrease.'</span>)
+disp(<span class="string">'In lay terms, when it is occluded, it does not matter that it is blurry.'</span>)
+disp(<span class="string">'When running model #3 to see the effect of oculo-motor noise, its effect is small and non-significant.'</span>)
 saveas(gcf,fullfile(figure_path,<span class="string">'dprime_GLME_effects.fig'</span>)); snapnow;
 </pre><pre class="codeoutput">d' - Wilcoxon-Mann&#8211;Whitney (signed-ranks) U = 5694, p = 0.0130
 Data are significantly different, so let's keep them separated
@@ -160,47 +163,47 @@ We tested 41 models.
     Rank                                                     formula                                                         link         AIC      adj.R2(%)    R2(%)    norm.res.
     ____    _________________________________________________________________________________________________________    ____________    ______    _________    _____    _________
 
-      1     {'dprime ~ 1  + eccentricity + fractionOccluded + (1|subjectID)'                                        }    {'identity'}    204.16      29.8       31.1      {'yes'} 
-      2     {'dprime ~ 1  + eccentricity + ocm + fractionOccluded + (1|subjectID)'                                  }    {'identity'}    204.97      29.2       31.1      {'yes'} 
-      3     {'dprime ~ 1  + eccentricity + fractionOccluded + fractionOccluded:eccentricity + (1|subjectID)'        }    {'identity'}    205.19      30.4       32.2      {'yes'} 
-      4     {'dprime ~ 1  + ocm + fractionOccluded + (1|subjectID)'                                                 }    {'identity'}    205.68      28.5       29.7      {'yes'} 
-      5     {'dprime ~ 1  + eccentricity + fractionOccluded + fractionOccluded:ocm + (1|subjectID)'                 }    {'identity'}    206.14      29.3       31.2      {'yes'} 
-      6     {'dprime ~ 1  + eccentricity + fractionOccluded + eccentricity:ocm + (1|subjectID)'                     }    {'identity'}    206.15      29.1         31      {'yes'} 
-      7     {'dprime ~ 1  + ocm + fractionOccluded + fractionOccluded:ocm + (1|subjectID)'                          }    {'identity'}    206.17      29.3       31.2      {'yes'} 
-      8     {'dprime ~ 1  + ocm + fractionOccluded + fractionOccluded:eccentricity + (1|subjectID)'                 }    {'identity'}    206.29      29.8       31.6      {'yes'} 
-      9     {'dprime ~ 1  + fractionOccluded + eccentricity:ocm + (1|subjectID)'                                    }    {'identity'}    206.37        28       29.3      {'yes'} 
-     10     {'dprime ~ 1  + fractionOccluded + (1|subjectID)'                                                       }    {'identity'}    206.51      28.2       28.8      {'yes'} 
-     11     {'dprime ~ 1  + fractionOccluded + eccentricity:ocm + fractionOccluded:eccentricity + (1|subjectID)'    }    {'identity'}     207.2      28.9       30.8      {'yes'} 
-     12     {'dprime ~ 1  + ocm + fractionOccluded + eccentricity:ocm + (1|subjectID)'                              }    {'identity'}    207.67      27.8       29.7      {'yes'} 
-     13     {'dprime ~ 1  + fractionOccluded + fractionOccluded:ocm + eccentricity:ocm + (1|subjectID)'             }    {'identity'}    208.07      27.8       29.7      {'yes'} 
-     14     {'dprime ~ 1  + fractionOccluded + fractionOccluded:eccentricity + (1|subjectID)'                       }    {'identity'}     208.1      28.4       29.6      {'yes'} 
-     15     {'dprime ~ 1  + fractionOccluded + fractionOccluded:ocm + (1|subjectID)'                                }    {'identity'}    208.43      27.4       28.7      {'yes'} 
-     16     {'dprime ~ 1  + fractionOccluded + fractionOccluded:ocm + fractionOccluded:eccentricity + (1|subjectID)'}    {'identity'}    209.66      27.8       29.7      {'yes'} 
-     17     {'dprime ~ 1  + fractionOccluded:ocm + (1|subjectID)'                                                   }    {'identity'}    214.01      20.3         21      {'yes'} 
-     18     {'dprime ~ 1  + eccentricity + fractionOccluded:ocm + (1|subjectID)'                                    }    {'identity'}    214.08      20.1       21.5      {'no' } 
-     19     {'dprime ~ 1  + eccentricity + fractionOccluded:ocm + eccentricity:ocm + (1|subjectID)'                 }    {'identity'}    215.04        21         23      {'yes'} 
-     20     {'dprime ~ 1  + eccentricity + fractionOccluded:ocm + fractionOccluded:eccentricity + (1|subjectID)'    }    {'identity'}     215.9      19.6       21.7      {'yes'} 
-     21     {'dprime ~ 1  + fractionOccluded:ocm + fractionOccluded:eccentricity + (1|subjectID)'                   }    {'identity'}    215.92      19.8       21.2      {'yes'} 
-     22     {'dprime ~ 1  + eccentricity + ocm + fractionOccluded:ocm + (1|subjectID)'                              }    {'identity'}    215.93      19.8       21.9      {'yes'} 
-     23     {'dprime ~ 1  + fractionOccluded:ocm + eccentricity:ocm + (1|subjectID)'                                }    {'identity'}    215.98      19.5       20.9      {'yes'} 
-     24     {'dprime ~ 1  + ocm + fractionOccluded:ocm + (1|subjectID)'                                             }    {'identity'}    216.01      19.6         21      {'yes'} 
-     25     {'dprime ~ 1  + fractionOccluded:ocm + eccentricity:ocm + fractionOccluded:eccentricity + (1|subjectID)'}    {'identity'}     217.9        19       21.1      {'yes'} 
-     26     {'dprime ~ 1  + ocm + fractionOccluded:ocm + fractionOccluded:eccentricity + (1|subjectID)'             }    {'identity'}    217.92      19.1       21.3      {'yes'} 
-     27     {'dprime ~ 1  + ocm + fractionOccluded:ocm + eccentricity:ocm + (1|subjectID)'                          }    {'identity'}    217.94      18.8       20.9      {'yes'} 
-     28     {'dprime ~ 1  + fractionOccluded:eccentricity + (1|subjectID)'                                          }    {'identity'}    223.22      12.7       13.5      {'yes'} 
-     29     {'dprime ~ 1  + ocm + fractionOccluded:eccentricity + (1|subjectID)'                                    }    {'identity'}    223.68      12.3       13.8      {'yes'} 
-     30     {'dprime ~ 1  + eccentricity + fractionOccluded:eccentricity + (1|subjectID)'                           }    {'identity'}    223.99      12.7       14.2      {'yes'} 
-     31     {'dprime ~ 1  + eccentricity:ocm + fractionOccluded:eccentricity + (1|subjectID)'                       }    {'identity'}    224.66      11.8       13.4      {'yes'} 
-     32     {'dprime ~ 1  + eccentricity + ocm + fractionOccluded:eccentricity + (1|subjectID)'                     }    {'identity'}    225.02      11.8       14.2      {'yes'} 
-     33     {'dprime ~ 1  + ocm + eccentricity:ocm + fractionOccluded:eccentricity + (1|subjectID)'                 }    {'identity'}    225.51      11.8       14.1      {'yes'} 
-     34     {'dprime ~ 1  + eccentricity + eccentricity:ocm + fractionOccluded:eccentricity + (1|subjectID)'        }    {'identity'}    225.99      11.9       14.2      {'yes'} 
-     35     {'dprime ~ 1  + ocm + (1|subjectID)'                                                                    }    {'identity'}    229.09       8.6        9.4      {'yes'} 
-     36     {'dprime ~ 1  + eccentricity + ocm + eccentricity:ocm + (1|subjectID)'                                  }    {'identity'}    229.42       9.8       12.1      {'yes'} 
-     37     {'dprime ~ 1  + eccentricity + ocm + (1|subjectID)'                                                     }    {'identity'}    230.24       7.9        9.5      {'yes'} 
-     38     {'dprime ~ 1  + eccentricity + (1|subjectID)'                                                           }    {'identity'}    230.49       7.9        8.7      {'yes'} 
-     39     {'dprime ~ 1  + eccentricity:ocm + (1|subjectID)'                                                       }    {'identity'}    230.67       7.4        8.2      {'yes'} 
-     40     {'dprime ~ 1  + ocm + eccentricity:ocm + (1|subjectID)'                                                 }    {'identity'}    230.95       8.3        9.9      {'yes'} 
-     41     {'dprime ~ 1  + eccentricity + eccentricity:ocm + (1|subjectID)'                                        }    {'identity'}    232.21       6.9        8.5      {'yes'} 
+      1     {'dprime ~ 1  + eccentricity + fractionOccluded + fractionOccluded:eccentricity + (1|subjectID)'        }    {'identity'}    197.13      32.2         34      {'yes'} 
+      2     {'dprime ~ 1  + eccentricity + fractionOccluded + (1|subjectID)'                                        }    {'identity'}    199.03      29.9       31.2      {'yes'} 
+      3     {'dprime ~ 1  + ocm + fractionOccluded + (1|subjectID)'                                                 }    {'identity'}    199.93      29.7         31      {'yes'} 
+      4     {'dprime ~ 1  + ocm + fractionOccluded + fractionOccluded:ocm + (1|subjectID)'                          }    {'identity'}    200.37      30.6       32.5      {'yes'} 
+      5     {'dprime ~ 1  + eccentricity + fractionOccluded + eccentricity:ocm + (1|subjectID)'                     }    {'identity'}    200.62      29.8       31.7      {'yes'} 
+      6     {'dprime ~ 1  + eccentricity + ocm + fractionOccluded + (1|subjectID)'                                  }    {'identity'}    200.65      29.3       31.2      {'yes'} 
+      7     {'dprime ~ 1  + eccentricity + fractionOccluded + fractionOccluded:ocm + (1|subjectID)'                 }    {'identity'}    200.72      29.8       31.7      {'yes'} 
+      8     {'dprime ~ 1  + ocm + fractionOccluded + fractionOccluded:eccentricity + (1|subjectID)'                 }    {'identity'}    200.88      30.5       32.4      {'yes'} 
+      9     {'dprime ~ 1  + fractionOccluded + (1|subjectID)'                                                       }    {'identity'}    201.11      29.3       29.9      {'yes'} 
+     10     {'dprime ~ 1  + ocm + fractionOccluded + eccentricity:ocm + (1|subjectID)'                              }    {'identity'}     201.3      29.8       31.7      {'yes'} 
+     11     {'dprime ~ 1  + fractionOccluded + eccentricity:ocm + (1|subjectID)'                                    }    {'identity'}    201.59      28.8       30.1      {'yes'} 
+     12     {'dprime ~ 1  + fractionOccluded + eccentricity:ocm + fractionOccluded:eccentricity + (1|subjectID)'    }    {'identity'}    202.65      29.4       31.3      {'yes'} 
+     13     {'dprime ~ 1  + fractionOccluded + fractionOccluded:eccentricity + (1|subjectID)'                       }    {'identity'}    202.89      29.1       30.4      {'yes'} 
+     14     {'dprime ~ 1  + fractionOccluded + fractionOccluded:ocm + (1|subjectID)'                                }    {'identity'}       203      28.5       29.8      {'yes'} 
+     15     {'dprime ~ 1  + fractionOccluded + fractionOccluded:ocm + eccentricity:ocm + (1|subjectID)'             }    {'identity'}    203.42      28.4       30.4      {'yes'} 
+     16     {'dprime ~ 1  + fractionOccluded + fractionOccluded:ocm + fractionOccluded:eccentricity + (1|subjectID)'}    {'identity'}    204.48      28.6       30.5      {'yes'} 
+     17     {'dprime ~ 1  + fractionOccluded:ocm + (1|subjectID)'                                                   }    {'identity'}    208.85        21       21.7      {'yes'} 
+     18     {'dprime ~ 1  + eccentricity + fractionOccluded:ocm + eccentricity:ocm + (1|subjectID)'                 }    {'identity'}    209.57      21.5       23.6      {'yes'} 
+     19     {'dprime ~ 1  + eccentricity + fractionOccluded:ocm + (1|subjectID)'                                    }    {'identity'}    209.68        20       21.4      {'yes'} 
+     20     {'dprime ~ 1  + fractionOccluded:ocm + fractionOccluded:eccentricity + (1|subjectID)'                   }    {'identity'}    210.81      20.4       21.8      {'yes'} 
+     21     {'dprime ~ 1  + fractionOccluded:ocm + eccentricity:ocm + (1|subjectID)'                                }    {'identity'}    210.83      20.4       21.9      {'yes'} 
+     22     {'dprime ~ 1  + ocm + fractionOccluded:ocm + (1|subjectID)'                                             }    {'identity'}    210.85      20.2       21.7      {'yes'} 
+     23     {'dprime ~ 1  + eccentricity + fractionOccluded:ocm + fractionOccluded:eccentricity + (1|subjectID)'    }    {'identity'}    211.19      19.5       21.6      {'yes'} 
+     24     {'dprime ~ 1  + eccentricity + ocm + fractionOccluded:ocm + (1|subjectID)'                              }    {'identity'}    211.19      19.9       22.1      {'yes'} 
+     25     {'dprime ~ 1  + ocm + fractionOccluded:ocm + eccentricity:ocm + (1|subjectID)'                          }    {'identity'}     212.7      19.8         22      {'yes'} 
+     26     {'dprime ~ 1  + fractionOccluded:ocm + eccentricity:ocm + fractionOccluded:eccentricity + (1|subjectID)'}    {'identity'}    212.79      19.8         22      {'yes'} 
+     27     {'dprime ~ 1  + ocm + fractionOccluded:ocm + fractionOccluded:eccentricity + (1|subjectID)'             }    {'identity'}    212.81      19.7       21.8      {'yes'} 
+     28     {'dprime ~ 1  + fractionOccluded:eccentricity + (1|subjectID)'                                          }    {'identity'}    218.26      13.3       14.1      {'yes'} 
+     29     {'dprime ~ 1  + ocm + fractionOccluded:eccentricity + (1|subjectID)'                                    }    {'identity'}    218.63      12.8       14.4      {'yes'} 
+     30     {'dprime ~ 1  + ocm + eccentricity:ocm + fractionOccluded:eccentricity + (1|subjectID)'                 }    {'identity'}    219.01      13.8       16.2      {'yes'} 
+     31     {'dprime ~ 1  + eccentricity + fractionOccluded:eccentricity + (1|subjectID)'                           }    {'identity'}    219.64      12.4         14      {'yes'} 
+     32     {'dprime ~ 1  + eccentricity:ocm + fractionOccluded:eccentricity + (1|subjectID)'                       }    {'identity'}       220      12.3       13.9      {'yes'} 
+     33     {'dprime ~ 1  + eccentricity + ocm + fractionOccluded:eccentricity + (1|subjectID)'                     }    {'identity'}    220.63        12       14.4      {'yes'} 
+     34     {'dprime ~ 1  + eccentricity + eccentricity:ocm + fractionOccluded:eccentricity + (1|subjectID)'        }    {'identity'}    221.62      11.7       14.1      {'yes'} 
+     35     {'dprime ~ 1  + eccentricity + ocm + eccentricity:ocm + (1|subjectID)'                                  }    {'identity'}    223.43      10.6         13      {'yes'} 
+     36     {'dprime ~ 1  + eccentricity + (1|subjectID)'                                                           }    {'identity'}    223.46       8.8        9.6      {'yes'} 
+     37     {'dprime ~ 1  + ocm + (1|subjectID)'                                                                    }    {'identity'}    224.44       8.8        9.6      {'yes'} 
+     38     {'dprime ~ 1  + eccentricity + ocm + (1|subjectID)'                                                     }    {'identity'}    224.92       8.2        9.8      {'yes'} 
+     39     {'dprime ~ 1  + eccentricity + eccentricity:ocm + (1|subjectID)'                                        }    {'identity'}    225.24       8.4       10.1      {'yes'} 
+     40     {'dprime ~ 1  + ocm + eccentricity:ocm + (1|subjectID)'                                                 }    {'identity'}    225.89       8.9       10.6      {'yes'} 
+     41     {'dprime ~ 1  + eccentricity:ocm + (1|subjectID)'                                                       }    {'identity'}     226.1       7.5        8.3      {'yes'} 
 
  ------------------------------------------------------------------------------- 
 Summary of variable formats in best model
@@ -209,15 +212,15 @@ Summary of variable formats in best model
 
     subjectID           {'categorical'}    {[C1    C2    C3    C4    M1    M2    M3    M4    M5    M6]}     true          true     
     fractionOccluded    {'double'     }    {[                                                0 0.9179]}     true          false    
-    eccentricity        {'double'     }    {[                                          0.3935 29.1507]}     true          false    
+    eccentricity        {'double'     }    {[                                          0.3935 14.4538]}     true          false    
 
 Summary of best model
 
 Generalized linear mixed-effects model fit by PL
 
 Model information:
-    Number of observations             115
-    Fixed effects coefficients           3
+    Number of observations             112
+    Fixed effects coefficients           4
     Random effects coefficients         10
     Covariance parameters                2
     Distribution                    Normal
@@ -225,92 +228,100 @@ Model information:
     FitMethod                       MPL   
 
 Formula:
-    dprime ~ 1 + fractionOccluded + eccentricity + (1 | subjectID)
+    dprime ~ 1 + fractionOccluded*eccentricity + (1 | subjectID)
 
 Model fit statistics:
     AIC       BIC       LogLikelihood    Deviance
-    204.16    217.88    -97.079          194.16  
+    197.13    213.44    -92.567          185.13  
 
 Fixed effects coefficients (95% CIs):
-    Name                        Estimate     SE         tStat      DF 
-    {'(Intercept)'     }           1.3038    0.13655     9.5476    112
-    {'fractionOccluded'}          -1.0855    0.19319     -5.619    112
-    {'eccentricity'    }        -0.029347    0.01383    -2.1221    112
+    Name                                     Estimate    SE          tStat  
+    {'(Intercept)'                  }          1.4432     0.14843      9.723
+    {'fractionOccluded'             }         -1.4507     0.27205    -5.3326
+    {'eccentricity'                 }        -0.08268    0.028431    -2.9081
+    {'fractionOccluded:eccentricity'}         0.15457    0.077455     1.9957
 
 
-    pValue        Lower        Upper     
-    3.6598e-16       1.0332        1.5743
-    1.4213e-07      -1.4683      -0.70276
-      0.036037    -0.056749    -0.0019456
+    DF     pValue        Lower       Upper    
+    108    1.9909e-16       1.149       1.7374
+    108    5.3637e-07       -1.99     -0.91149
+    108      0.004415    -0.13904    -0.026324
+    108      0.048488    0.001045       0.3081
 
 Random effects covariance parameters:
 Group: subjectID (10 Levels)
     Name1                  Name2                  Type           Estimate
-    {'(Intercept)'}        {'(Intercept)'}        {'std'}        0.2461  
+    {'(Intercept)'}        {'(Intercept)'}        {'std'}        0.22696 
 
 Group: Error
     Name                        Estimate
-    {'sqrt(Dispersion)'}        0.53782 
+    {'sqrt(Dispersion)'}        0.53035 
 
-AIC: 204.1586
-Adjusted R^2: 29.8%
-R^2: 31.1%
-Residuals: Kolmogorov test for normality (alpha 5%):  KS = 0.09, p = 0.2488
+AIC: 197.1333
+Adjusted R^2: 32.2%
+R^2: 34%
+Residuals: Kolmogorov test for normality (alpha 5%):  KS = 0.11, p = 0.1496
 Residuals are normal
 
     RANDOM EFFECT COEFFICIENTS: DFMETHOD = 'RESIDUAL', ALPHA = 0.01
 
     Group                Level         Name                   Estimate 
-    {'subjectID'}        {'C1'}        {'(Intercept)'}          0.29072
-    {'subjectID'}        {'C2'}        {'(Intercept)'}          0.17778
-    {'subjectID'}        {'C3'}        {'(Intercept)'}          0.10676
-    {'subjectID'}        {'C4'}        {'(Intercept)'}         -0.35637
-    {'subjectID'}        {'M1'}        {'(Intercept)'}         -0.10154
-    {'subjectID'}        {'M2'}        {'(Intercept)'}        -0.010318
-    {'subjectID'}        {'M3'}        {'(Intercept)'}         -0.21772
-    {'subjectID'}        {'M4'}        {'(Intercept)'}        -0.079413
-    {'subjectID'}        {'M5'}        {'(Intercept)'}          0.20141
-    {'subjectID'}        {'M6'}        {'(Intercept)'}        -0.011301
+    {'subjectID'}        {'C1'}        {'(Intercept)'}          0.27258
+    {'subjectID'}        {'C2'}        {'(Intercept)'}          0.16035
+    {'subjectID'}        {'C3'}        {'(Intercept)'}          0.11513
+    {'subjectID'}        {'C4'}        {'(Intercept)'}         -0.32463
+    {'subjectID'}        {'M1'}        {'(Intercept)'}         -0.11601
+    {'subjectID'}        {'M2'}        {'(Intercept)'}         0.010563
+    {'subjectID'}        {'M3'}        {'(Intercept)'}         -0.18948
+    {'subjectID'}        {'M4'}        {'(Intercept)'}        -0.063841
+    {'subjectID'}        {'M5'}        {'(Intercept)'}         0.076552
+    {'subjectID'}        {'M6'}        {'(Intercept)'}         0.058782
 
 
-    SEPred     tStat        DF     pValue      Lower        Upper   
-    0.13286       2.1881    112    0.030739    -0.057441     0.63888
-    0.13241       1.3426    112     0.18211      -0.1692     0.52476
-    0.14271      0.74808    112     0.45598      -0.2672     0.48071
-     0.1469      -2.4259    112    0.016867     -0.74131    0.028579
-    0.19743      -0.5143    112     0.60806      -0.6189     0.41582
-    0.18926    -0.054517    112     0.95662     -0.50626     0.48562
-    0.19677      -1.1065    112     0.27089     -0.73335      0.2979
-    0.19779     -0.40151    112     0.68881     -0.59771     0.43888
-    0.19537       1.0309    112      0.3048     -0.31054     0.71335
-    0.17456    -0.064739    112      0.9485     -0.46873     0.44613
+    SEPred     tStat       DF     pValue      Lower        Upper   
+    0.12986       2.099    108    0.038145    -0.067929     0.61309
+    0.12886      1.2444    108     0.21605     -0.17753     0.49822
+    0.13729     0.83857    108     0.40356     -0.24486     0.47512
+    0.14043     -2.3117    108    0.022693     -0.69285    0.043596
+    0.18689    -0.62073    108     0.53609     -0.60607     0.37405
+    0.18584    0.056841    108     0.95478     -0.47673     0.49786
+    0.18574     -1.0201    108     0.30996     -0.67651     0.29756
+    0.18935    -0.33716    108     0.73665     -0.56033     0.43265
+    0.19298     0.39669    108     0.69238     -0.42946     0.58257
+    0.16871     0.34843    108      0.7282     -0.38359     0.50115
 
 No adjustment for multiple comparisons
-            Name            Estimate      tStat     DF       pValue      adj_pValue    H0_reject
-    ____________________    _________    _______    ___    __________    __________    _________
+                  Name                   Estimate     tStat     DF       pValue      adj_pValue    H0_reject
+    _________________________________    ________    _______    ___    __________    __________    _________
 
-    {'fractionOccluded'}      -1.0855     -5.619    112    1.4213e-07    1.4213e-07      true   
-    {'eccentricity'    }    -0.029347    -2.1221    112      0.036037      0.036037      true   
+    {'fractionOccluded'             }     -1.4507    -5.3326    108    5.3637e-07    5.3637e-07      true   
+    {'eccentricity'                 }    -0.08268    -2.9081    108      0.004415      0.004415      true   
+    {'fractionOccluded:eccentricity'}     0.15457     1.9957    108      0.048488      0.048488      true   
 
-Significant effect of fractionOccluded (t(112) = -5.62, adjusted p = 0)
-Significant effect of eccentricity (t(112) = -2.12, adjusted p = 0.036)
-Local effect size for fractionOccluded : Cohen s f2 = 0.33 (medium)
-Local effect size for eccentricity : Cohen s f2 = 0.03 (small)
+Significant effect of fractionOccluded (t(108) = -5.33, adjusted p = 0)
+Significant effect of eccentricity (t(108) = -2.91, adjusted p = 0.0044)
+Significant effect of fractionOccluded:eccentricity (t(108) = 2, adjusted p = 0.0485)
+Local effect size for fractionOccluded : Cohen s f2 = 0.3 (medium)
+Local effect size for eccentricity : Cohen s f2 = 0.05 (small)
+Local effect size for fractionOccluded:eccentricity : Cohen s f2 = 0.06 (small)
  ------------------------------------------------------------------------------- 
 
 ans =
 
-  2&times;7 table
+  3&times;7 table
 
-                Name                Estimate      tStat     DF       pValue      adj_pValue    H0_reject
-    ____________________________    _________    _______    ___    __________    __________    _________
+                      Name                       Estimate     tStat     DF       pValue      adj_pValue    H0_reject
+    _________________________________________    ________    _______    ___    __________    __________    _________
 
-    {'dprime: fractionOccluded'}      -1.0855     -5.619    112    1.4213e-07    1.4213e-07      true   
-    {'dprime: eccentricity'    }    -0.029347    -2.1221    112      0.036037      0.036037      true   
+    {'dprime: fractionOccluded'             }     -1.4507    -5.3326    108    5.3637e-07    5.3637e-07      true   
+    {'dprime: eccentricity'                 }    -0.08268    -2.9081    108      0.004415      0.004415      true   
+    {'dprime: fractionOccluded:eccentricity'}     0.15457     1.9957    108      0.048488      0.048488      true   
 
-</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_03.png" alt=""> <pre class="codeoutput">Interpretation: there is mostly a large effect of fraction occluded. There is also a small effect of eccentricity.
-Larger eccentricities and fraction occluded are associated with worse d' results.
-OCM's effect is dubious.
+</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_03.png" alt=""> <pre class="codeoutput">The first model is undeniably the best fit for the data with best AIC but also best adj. R2 and best R2.
+Interpretation: there is mostly a medium effect of fraction occluded. There is also a small effect of eccentricity and a small interaction effect between them.
+Larger eccentricities and fraction occluded are associated with worse d' results, but for higher fraction occluded, eccentricity effects decrease.
+In lay terms, when it is occluded, it does not matter that it is blurry.
+When running model #3 to see the effect of oculo-motor noise, its effect is small and non-significant.
 </pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_04.png" alt=""> <h2 id="6">debugging</h2><pre class="codeinput"><span class="keyword">catch</span> err
    keyboard
 <span class="keyword">end</span>
@@ -391,7 +402,7 @@ model.liquid_factors = {'eccentricity','ocm','fractionOccluded','fractionOcclude
 % a list of potential model links
 model.links = {'identity'};
 % outliers/subjects to be removed - can be left empty
-model.exclude = [];
+model.exclude = [98,107,110]; % exclude the 3 instances for which participants did not follow pursuit instructions
 % no warnings if 1 - careful with that option
 model.warning_off = 0;
 % whether to use a GLM (0) or a GLME (1).
@@ -403,11 +414,14 @@ mdls = all_glm(model);
 % display diagnostics and results
 display_model(mdls{1}, model) %plot model ranked 1 - you can select any other models by rank according to the results on the various indicators provided
 saveas(gcf,fullfile(figure_path,'dprime_GLME_diagnostics.fig')); snapnow;
-h=subplot(1,2,1);       plot_covariate_effect(data.dprime, data.fractionOccluded, h, 'fraction occluded', 'd prime', 0, 0, mdls{1},1,model);
-h=subplot(1,2,2);       plot_covariate_effect(data.dprime, data.eccentricity, h, 'eccentricity (deg)', 'd prime', 0, 0, mdls{1},1,model);
-disp('Interpretation: there is mostly a large effect of fraction occluded. There is also a small effect of eccentricity.')
-disp('Larger eccentricities and fraction occluded are associated with worse d'' results.')
-disp('OCM''s effect is dubious.')
+h=subplot(1,3,1);       plot_covariate_effect(data.dprime, data.fractionOccluded.*100, h, 'fraction occluded (%)', 'd prime', 0, 0, mdls{1},1,model);
+h=subplot(1,3,2);       plot_covariate_effect(data.dprime, data.eccentricity, h, 'eccentricity (deg)', 'd prime', 0, 0, mdls{1},1,model);
+h=subplot(1,3,3); plot_interaction(data.dprime, (data.eccentricity<=median(data.eccentricity)),data.fractionOccluded.*100, h, 'fraction occluded (%)','d prime', {'eccentricity > median','eccentricity <= median'},mdls{1}, 1, model); % median is 2.36
+disp('The first model is undeniably the best fit for the data with best AIC but also best adj. R2 and best R2.')
+disp('Interpretation: there is mostly a medium effect of fraction occluded. There is also a small effect of eccentricity and a small interaction effect between them.')
+disp('Larger eccentricities and fraction occluded are associated with worse d'' results, but for higher fraction occluded, eccentricity effects decrease.')
+disp('In lay terms, when it is occluded, it does not matter that it is blurry.')
+disp('When running model #3 to see the effect of oculo-motor noise, its effect is small and non-significant.')
 saveas(gcf,fullfile(figure_path,'dprime_GLME_effects.fig')); snapnow;
 
 %% debugging

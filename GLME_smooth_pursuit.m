@@ -72,7 +72,7 @@ model.liquid_factors = {'eccentricity','ocm','fractionOccluded','fractionOcclude
 % a list of potential model links
 model.links = {'identity'};
 % outliers/subjects to be removed - can be left empty
-model.exclude = [];
+model.exclude = [98,107,110]; % exclude the 3 instances for which participants did not follow pursuit instructions
 % no warnings if 1 - careful with that option
 model.warning_off = 0;
 % whether to use a GLM (0) or a GLME (1).
@@ -84,11 +84,14 @@ mdls = all_glm(model);
 % display diagnostics and results
 display_model(mdls{1}, model) %plot model ranked 1 - you can select any other models by rank according to the results on the various indicators provided
 saveas(gcf,fullfile(figure_path,'dprime_GLME_diagnostics.fig')); snapnow;
-h=subplot(1,2,1);       plot_covariate_effect(data.dprime, data.fractionOccluded, h, 'fraction occluded', 'd prime', 0, 0, mdls{1},1,model);
-h=subplot(1,2,2);       plot_covariate_effect(data.dprime, data.eccentricity, h, 'eccentricity (deg)', 'd prime', 0, 0, mdls{1},1,model);
-disp('Interpretation: there is mostly a large effect of fraction occluded. There is also a small effect of eccentricity.')
-disp('Larger eccentricities and fraction occluded are associated with worse d'' results.')
-disp('OCM''s effect is dubious.')
+h=subplot(1,3,1);       plot_covariate_effect(data.dprime, data.fractionOccluded.*100, h, 'fraction occluded (%)', 'd prime', 0, 0, mdls{1},1,model);
+h=subplot(1,3,2);       plot_covariate_effect(data.dprime, data.eccentricity, h, 'eccentricity (deg)', 'd prime', 0, 0, mdls{1},1,model);
+h=subplot(1,3,3); plot_interaction(data.dprime, (data.eccentricity<=median(data.eccentricity)),data.fractionOccluded.*100, h, 'fraction occluded (%)','d prime', {'eccentricity > median','eccentricity <= median'},mdls{1}, 1, model); % median is 2.36
+disp('The first model is undeniably the best fit for the data with best AIC but also best adj. R2 and best R2.')
+disp('Interpretation: there is mostly a medium effect of fraction occluded. There is also a small effect of eccentricity and a small interaction effect between them.')
+disp('Larger eccentricities and fraction occluded are associated with worse d'' results, but for higher fraction occluded, eccentricity effects decrease.')
+disp('In lay terms, when it is occluded, it does not matter that it is blurry.')
+disp('When running model #3 to see the effect of oculo-motor noise, its effect is small and non-significant.')
 saveas(gcf,fullfile(figure_path,'dprime_GLME_effects.fig')); snapnow;
 
 %% debugging

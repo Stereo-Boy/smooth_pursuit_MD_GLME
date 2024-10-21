@@ -13,13 +13,13 @@ function plot_interaction(dv, grouping_factor, covariate, handle, xlabell, ylabe
 % ex of usage: 
 % h=subplot(1,4,4); 
 % plot_interaction(data.Time, data.stereo,data.ageGroup, h, 'Age group (younger / older)','Task completion time (sec)', '',mdls{1}, 1, model)  
+try
 if ~exist('model','var'); model.exclude = []; end
 if ~exist('plotModel','var'); plotModel=0; end
 if ~exist('mdl','var')||isempty(mdl); plotModel=0; end
-levels = unique(grouping_factor);
+levels = sort(unique(grouping_factor));
 if ~exist('legendLabels','var')||isempty(legendLabels); legendLabels = {char(levels(1)),char(levels(2))}; end
 
-try
     % exclude outliers
     if ~isempty(model.exclude) 
        dv(model.exclude) = []; 
