@@ -51,10 +51,13 @@ dispi(size(data,1),' lines of data found.')
 check_distrib_indep(data.dprime(data.status=='control'),data.dprime(data.status=='patient'),'d''');
 disp('Data are not distributed differently than normal')
 saveas(gcf,fullfile(figure_path,'dprime_distribution.fig')); snapnow;
+
 % Only apply the collinearity analysis on continuous predictors
 % Use Kendall correlations that are more powerful when using small samples
-corrplot2(data(:,{'eccentricity','fractionOccluded','ocm'}),'type','Kendall')
-disp('No particular worries for collinearity but keep in mind the correlation between ecc and ocm.')
+disp('Collinearity')
+disp('Lines and columns are ordered as eccentricity,fractionOccluded and ocm.')
+[Tau,PValue] = corrplot2(data(:,{'eccentricity','fractionOccluded','ocm'}),'type','Kendall');
+disp('No particular worries for collinearity given all correlations are <0.8 but keep in mind the significant correlation between eccentricity and ocm.')
 saveas(gcf,fullfile(figure_path,'factor_collinearity.fig')); snapnow;
 
 % define a model structure

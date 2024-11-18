@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>Smooth pursuit in macular degeneration</title><meta name="generator" content="MATLAB 9.14"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2024-10-21"><meta name="DC.source" content="GLME_smooth_pursuit.m"><style type="text/css">
+      --><title>Smooth pursuit in macular degeneration</title><meta name="generator" content="MATLAB 9.14"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2024-11-18"><meta name="DC.source" content="GLME_smooth_pursuit.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -111,10 +111,13 @@ Data sample and size:
 check_distrib_indep(data.dprime(data.status==<span class="string">'control'</span>),data.dprime(data.status==<span class="string">'patient'</span>),<span class="string">'d'''</span>);
 disp(<span class="string">'Data are not distributed differently than normal'</span>)
 saveas(gcf,fullfile(figure_path,<span class="string">'dprime_distribution.fig'</span>)); snapnow;
+
 <span class="comment">% Only apply the collinearity analysis on continuous predictors</span>
 <span class="comment">% Use Kendall correlations that are more powerful when using small samples</span>
-corrplot2(data(:,{<span class="string">'eccentricity'</span>,<span class="string">'fractionOccluded'</span>,<span class="string">'ocm'</span>}),<span class="string">'type'</span>,<span class="string">'Kendall'</span>)
-disp(<span class="string">'No particular worries for collinearity but keep in mind the correlation between ecc and ocm.'</span>)
+disp(<span class="string">'Collinearity'</span>)
+disp(<span class="string">'Lines and columns are ordered as eccentricity,fractionOccluded and ocm.'</span>)
+[Tau,PValue] = corrplot2(data(:,{<span class="string">'eccentricity'</span>,<span class="string">'fractionOccluded'</span>,<span class="string">'ocm'</span>}),<span class="string">'type'</span>,<span class="string">'Kendall'</span>);
+disp(<span class="string">'No particular worries for collinearity given all correlations are &lt;0.8 but keep in mind the significant correlation between eccentricity and ocm.'</span>)
 saveas(gcf,fullfile(figure_path,<span class="string">'factor_collinearity.fig'</span>)); snapnow;
 
 <span class="comment">% define a model structure</span>
@@ -157,7 +160,9 @@ saveas(gcf,fullfile(figure_path,<span class="string">'dprime_GLME_effects.fig'</
 Data are significantly different, so let's keep them separated
 Kolmogorov-Smirnov tests for normality:  Group 1 - KS = 0.10, p = 0.3028 and Group 2 - KS = 0.18, p = 0.3323
 Data are not distributed differently than normal
-</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_01.png" alt=""> <pre class="codeoutput">No particular worries for collinearity but keep in mind the correlation between ecc and ocm.
+</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_01.png" alt=""> <pre class="codeoutput">Collinearity
+Lines and columns are ordered as eccentricity,fractionOccluded and ocm.
+No particular worries for collinearity given all correlations are &lt;0.8 but keep in mind the significant correlation between eccentricity and ocm.
 </pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_02.png" alt=""> <pre class="codeoutput">Running 41 GLMEs...
 We tested 41 models.
     Rank                                                     formula                                                         link         AIC      adj.R2(%)    R2(%)    norm.res.
@@ -381,10 +386,13 @@ dispi(size(data,1),' lines of data found.')
 check_distrib_indep(data.dprime(data.status=='control'),data.dprime(data.status=='patient'),'d''');
 disp('Data are not distributed differently than normal')
 saveas(gcf,fullfile(figure_path,'dprime_distribution.fig')); snapnow;
+
 % Only apply the collinearity analysis on continuous predictors
 % Use Kendall correlations that are more powerful when using small samples
-corrplot2(data(:,{'eccentricity','fractionOccluded','ocm'}),'type','Kendall')
-disp('No particular worries for collinearity but keep in mind the correlation between ecc and ocm.')
+disp('Collinearity')
+disp('Lines and columns are ordered as eccentricity,fractionOccluded and ocm.')
+[Tau,PValue] = corrplot2(data(:,{'eccentricity','fractionOccluded','ocm'}),'type','Kendall');
+disp('No particular worries for collinearity given all correlations are <0.8 but keep in mind the significant correlation between eccentricity and ocm.')
 saveas(gcf,fullfile(figure_path,'factor_collinearity.fig')); snapnow;
 
 % define a model structure
