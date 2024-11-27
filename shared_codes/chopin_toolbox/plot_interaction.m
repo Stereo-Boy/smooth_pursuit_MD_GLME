@@ -73,7 +73,7 @@ if ~exist('legendLabels','var')||isempty(legendLabels); legendLabels = {char(lev
     
     % plot legend
     if plotModel
-        legend([p1,p2,m1,m2],{legendLabels{1},legendLabels{2},'Model estimates','Model estimates'},'Location','southeast');  
+        legend([p1,p2,m1,m2],{legendLabels{1},legendLabels{2},'Model estimates','Model estimates'},'Location','northeast');  
     else
         legend([p1,p2],legendLabels,'Location','southeast');
     end
