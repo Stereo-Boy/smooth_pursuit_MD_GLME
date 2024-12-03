@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>GLME_smooth_pursuit</title><meta name="generator" content="MATLAB 9.14"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2024-11-27"><meta name="DC.source" content="GLME_smooth_pursuit.m"><style type="text/css">
+      --><title>GLME_smooth_pursuit</title><meta name="generator" content="MATLAB 9.14"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2024-12-02"><meta name="DC.source" content="GLME_smooth_pursuit.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -67,7 +67,7 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
 
 
-  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Smooth pursuit in macular degeneration</a></li><li><a href="#3">Preprocessing</a></li><li><a href="#4">Primary hypotheses on d'</a></li><li><a href="#5">Same analysis restrained to fixation data only</a></li><li><a href="#6">Same analysis restrained to pursuit data only</a></li><li><a href="#7">debugging</a></li></ul></div><h2 id="1">Smooth pursuit in macular degeneration</h2><div><ul><li>This functions carries on the model statistical analysis for that project.</li><li>Eye movement data, visibility and d' have been preprocessed and gathered in the master datafile.</li><li>runs the GLM/GLME with the chopin toolbox.</li><li>plots various graphs</li><li>displays statistic conclusion messages</li><li>saves figures from statistical analysis in figures folder Inputs None. The function must run from the analysis folder with the master datafile being located in data. Functions used in this code should all be located in shared_codes. Outputs None. But generates figures (folder figures), statistics (command window) and generates a joint markdown output in html by pressing Publish.</li></ul></div><pre class="codeinput"><span class="keyword">function</span> GLME_smooth_pursuit
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Smooth pursuit in macular degeneration</a></li><li><a href="#3">Preprocessing</a></li><li><a href="#4">Primary hypotheses on d' - fixation data only</a></li><li><a href="#5">Same analysis restrained to pursuit data only</a></li><li><a href="#6">Same analysis for all conditions taken together</a></li><li><a href="#7">debugging</a></li></ul></div><h2 id="1">Smooth pursuit in macular degeneration</h2><div><ul><li>This functions carries on the model statistical analysis for that project.</li><li>Eye movement data, visibility and d' have been preprocessed and gathered in the master datafile.</li><li>runs the GLM/GLME with the chopin toolbox.</li><li>plots various graphs</li><li>displays statistic conclusion messages</li><li>saves figures from statistical analysis in figures folder</li><li>Inputs: None. The function must run from the analysis folder with the master datafile being located in data.</li><li>Functions used in this code should all be located in shared_codes.</li><li>Outputs: None. But generates figures (folder figures), statistics (command window) and generates a joint markdown output in html by pressing Publish.</li></ul></div><pre class="codeinput"><span class="keyword">function</span> GLME_smooth_pursuit
 <span class="keyword">try</span>
 </pre><pre class="codeinput"> close <span class="string">all</span>;
  clc;
@@ -112,241 +112,8 @@ Data sample and size:
        C2           {'C2'}        {'No_Scotoma'}    control    {'controls'}     pursuit     {'rightward'}     1.5457           0              0.59828        0.43492
 
 112 lines of data found.
-</pre><h2 id="4">Primary hypotheses on d'</h2><p>Explore how the data can be explained by oculomotor noise, fraction occluded and eccentricity Hypotheses: * more eccentric stimuli result in worse d' * more fraction occluded for the stimuli result in worse d' * more oculomotor noise result in worse d'</p><pre class="codeinput"><span class="comment">% explore which distribution is correct</span>
-check_distrib_indep(data.dprime(data.status==<span class="string">'control'</span>),data.dprime(data.status==<span class="string">'patient'</span>),<span class="string">'d'''</span>);
-disp(<span class="string">'Data are not distributed differently than normal.'</span>)
-saveas(gcf,fullfile(figure_path,<span class="string">'dprime_distribution.fig'</span>)); snapnow;
-
-<span class="comment">% Only apply the collinearity analysis on continuous predictors</span>
-<span class="comment">% Use Kendall correlations that are more powerful when using small samples</span>
-disp(<span class="string">'Collinearity'</span>)
-disp(<span class="string">'Lines and columns are ordered as eccentricity,fractionOccluded and OMN.'</span>)
-[Tau,PValue] = corrplot2(data(:,{<span class="string">'eccentricity'</span>,<span class="string">'fractionOccluded'</span>,<span class="string">'omn'</span>}),<span class="string">'type'</span>,<span class="string">'Kendall'</span>)
-disp(<span class="string">'No particular worries for collinearity given all correlations are well &lt;0.8.'</span>)
-saveas(gcf,fullfile(figure_path,<span class="string">'factor_collinearity.fig'</span>)); snapnow; close;
-
-<span class="comment">% define a model structure</span>
-<span class="comment">% a table with the data, here called data</span>
-model.data = data;
-<span class="comment">% the name of the dependent variable in the data structure, here it is data.initial_work_mem</span>
-model.dv = <span class="string">'dprime'</span>;
-<span class="comment">% its distribution among poisson, normal, gamma, inverse gaussian, binomial as previously determined</span>
-model.distribution = <span class="string">'normal'</span>;
-<span class="comment">% the maximal nb of factors to explore in the model</span>
-model.max_nb_factors = 4; <span class="comment">% n=10 so 100 data are used to estimate subjects' random effects (1 factor). 16 data can be used to estimate 2 more factors - we add 1 so that we can also look at the effect of non-significant factors.</span>
-model.solid_factors = {<span class="string">'(1|subjectID)'</span>}; <span class="comment">%keep these between {}</span>
-<span class="comment">% a list of possible factors to be included, that can be removed if needed, and the interactions terms to explore</span>
-model.liquid_factors = {<span class="string">'eccentricity'</span>,<span class="string">'omn'</span>,<span class="string">'fractionOccluded'</span>,<span class="string">'fractionOccluded:omn'</span>,<span class="string">'eccentricity:omn'</span>,<span class="string">'fractionOccluded:eccentricity'</span>}; <span class="comment">%keep these between {}</span>
-<span class="comment">% a list of potential model links</span>
-model.links = {<span class="string">'identity'</span>};
-<span class="comment">% outliers/subjects to be removed - can be left empty</span>
-model.exclude = [];
-<span class="comment">% no warnings if 1 - careful with that option</span>
-model.warning_off = 0;
-<span class="comment">% whether to use a GLM (0) or a GLME (1).</span>
-model.glme = 1;
-
-<span class="comment">% run the model</span>
-mdls = all_glm(model);
-
-<span class="comment">% display diagnostics and results</span>
-display_model(mdls{1}, model) <span class="comment">%plot model ranked 1 - you can select any other models by rank according to the results on the various indicators provided</span>
-saveas(gcf,fullfile(figure_path,<span class="string">'dprime_GLME_diagnostics.fig'</span>)); snapnow; close;
-figure(<span class="string">'Color'</span>, <span class="string">'w'</span>, <span class="string">'units'</span>,<span class="string">'normalized'</span>,<span class="string">'outerposition'</span>,[0.1 0.1 0.8 0.6]);
-h=subplot(1,3,1);       plot_covariate_effect(data.dprime, data.fractionOccluded.*100, h, <span class="string">'fraction occluded (%)'</span>, <span class="string">'d prime'</span>, 0, 0, mdls{1},1,model);
-h=subplot(1,3,2);       plot_covariate_effect(data.dprime, data.eccentricity, h, <span class="string">'eccentricity (deg)'</span>, <span class="string">'d prime'</span>, 0, 0, mdls{1},1,model);
-h=subplot(1,3,3);       plot_interaction(data.dprime, (data.fractionOccluded&lt;=median(data.fractionOccluded)),data.eccentricity, h, <span class="string">'eccentricity'</span>,<span class="string">'d prime'</span>, {<span class="string">'fraction occluded &gt; median'</span>,<span class="string">'fraction occluded &lt;= median'</span>},mdls{1}, 1, model); <span class="comment">% median is 12.8%</span>
-disp(<span class="string">'The first model is undeniably the best fit for the data with best AIC but also best adj. R2 and best R2.'</span>)
-disp(<span class="string">'Interpretation: there is mostly a medium effect of fraction occluded. There is also a small effect of eccentricity and a small interaction effect between them.'</span>)
-disp(<span class="string">'Larger eccentricities and fraction occluded are associated with worse d'' results, and interacting, with the effect of fraction occluded decreasing with larger eccentricities.'</span>)
-disp(<span class="string">'When running the first model that includes OMN to see the effect of oculo-motor noise, we find that its effect is dubious and non-significant.'</span>)
-saveas(gcf,fullfile(figure_path,<span class="string">'dprime_GLME_effects.fig'</span>)); snapnow; close;
-</pre><pre class="codeoutput">d' - Wilcoxon-Mann&#8211;Whitney (signed-ranks) U = 5459, p = 0.0181
-Data are significantly different, so let's keep them separated
-Kolmogorov-Smirnov tests for normality:  Group 1 - KS = 0.10, p = 0.3028 and Group 2 - KS = 0.19, p = 0.3909
-Data are not distributed differently than normal.
-</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_01.png" alt=""> <pre class="codeoutput">Collinearity
-Lines and columns are ordered as eccentricity,fractionOccluded and OMN.
-
-Tau =
-
-    1.0000    0.2555    0.1429
-    0.2555    1.0000    0.0501
-    0.1429    0.0501    1.0000
-
-
-PValue =
-
-    1.0000    0.0001    0.0257
-    0.0001    1.0000    0.4394
-    0.0257    0.4394    1.0000
-
-No particular worries for collinearity given all correlations are well &lt;0.8.
-</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_02.png" alt=""> <pre class="codeoutput">Running 41 GLMEs...
-We tested 41 models.
-    Rank                                                     formula                                                         link         AIC      adj.R2(%)    R2(%)    norm.res.
-    ____    _________________________________________________________________________________________________________    ____________    ______    _________    _____    _________
-
-      1     {'dprime ~ 1  + eccentricity + fractionOccluded + fractionOccluded:eccentricity + (1|subjectID)'        }    {'identity'}    199.09      31.5       33.3      {'yes'} 
-      2     {'dprime ~ 1  + fractionOccluded + (1|subjectID)'                                                       }    {'identity'}    201.11      29.3       29.9      {'yes'} 
-      3     {'dprime ~ 1  + fractionOccluded + fractionOccluded:eccentricity + (1|subjectID)'                       }    {'identity'}    201.37        30       31.3      {'yes'} 
-      4     {'dprime ~ 1  + eccentricity + fractionOccluded + (1|subjectID)'                                        }    {'identity'}    202.68      28.7         30      {'yes'} 
-      5     {'dprime ~ 1  + fractionOccluded + fractionOccluded:omn + (1|subjectID)'                                }    {'identity'}    202.77      28.5       29.8      {'yes'} 
-      6     {'dprime ~ 1  + fractionOccluded + eccentricity:omn + fractionOccluded:eccentricity + (1|subjectID)'    }    {'identity'}    202.81      29.3       31.2      {'yes'} 
-      7     {'dprime ~ 1  + fractionOccluded + fractionOccluded:omn + fractionOccluded:eccentricity + (1|subjectID)'}    {'identity'}    202.82      29.3       31.2      {'yes'} 
-      8     {'dprime ~ 1  + omn + fractionOccluded + (1|subjectID)'                                                 }    {'identity'}    202.92      29.1       30.4      {'yes'} 
-      9     {'dprime ~ 1  + fractionOccluded + eccentricity:omn + (1|subjectID)'                                    }    {'identity'}    203.08      28.5       29.8      {'yes'} 
-     10     {'dprime ~ 1  + omn + fractionOccluded + eccentricity:omn + (1|subjectID)'                              }    {'identity'}    203.25      29.9       31.8      {'yes'} 
-     11     {'dprime ~ 1  + omn + fractionOccluded + fractionOccluded:eccentricity + (1|subjectID)'                 }    {'identity'}    203.34      29.5       31.4      {'yes'} 
-     12     {'dprime ~ 1  + omn + fractionOccluded + fractionOccluded:omn + (1|subjectID)'                          }    {'identity'}    203.73      29.1         31      {'yes'} 
-     13     {'dprime ~ 1  + eccentricity + omn + fractionOccluded + (1|subjectID)'                                  }    {'identity'}    203.84      29.2       31.1      {'yes'} 
-     14     {'dprime ~ 1  + eccentricity + fractionOccluded + eccentricity:omn + (1|subjectID)'                     }    {'identity'}    204.47      28.4       30.3      {'yes'} 
-     15     {'dprime ~ 1  + eccentricity + fractionOccluded + fractionOccluded:omn + (1|subjectID)'                 }    {'identity'}    204.48      27.9       29.9      {'yes'} 
-     16     {'dprime ~ 1  + fractionOccluded + fractionOccluded:omn + eccentricity:omn + (1|subjectID)'             }    {'identity'}    204.74      27.9       29.9      {'yes'} 
-     17     {'dprime ~ 1  + eccentricity + omn + fractionOccluded:omn + (1|subjectID)'                              }    {'identity'}    206.41      26.6       28.6      {'yes'} 
-     18     {'dprime ~ 1  + omn + fractionOccluded:omn + (1|subjectID)'                                             }    {'identity'}    207.72      24.6       25.9      {'yes'} 
-     19     {'dprime ~ 1  + eccentricity + fractionOccluded:omn + eccentricity:omn + (1|subjectID)'                 }    {'identity'}    208.05      24.6       26.6      {'yes'} 
-     20     {'dprime ~ 1  + omn + fractionOccluded:omn + eccentricity:omn + (1|subjectID)'                          }    {'identity'}    208.38      25.3       27.3      {'no' } 
-     21     {'dprime ~ 1  + omn + fractionOccluded:omn + fractionOccluded:eccentricity + (1|subjectID)'             }    {'identity'}    208.83      24.8       26.9      {'yes'} 
-     22     {'dprime ~ 1  + fractionOccluded:omn + eccentricity:omn + (1|subjectID)'                                }    {'identity'}    211.12        21       22.4      {'yes'} 
-     23     {'dprime ~ 1  + fractionOccluded:omn + fractionOccluded:eccentricity + (1|subjectID)'                   }    {'identity'}    211.24      20.7       22.1      {'yes'} 
-     24     {'dprime ~ 1  + fractionOccluded:omn + (1|subjectID)'                                                   }    {'identity'}    211.26      19.1       19.8      {'yes'} 
-     25     {'dprime ~ 1  + fractionOccluded:omn + eccentricity:omn + fractionOccluded:eccentricity + (1|subjectID)'}    {'identity'}     211.3      22.3       24.4      {'yes'} 
-     26     {'dprime ~ 1  + eccentricity + fractionOccluded:omn + (1|subjectID)'                                    }    {'identity'}    212.87      18.5       19.9      {'yes'} 
-     27     {'dprime ~ 1  + eccentricity + fractionOccluded:omn + fractionOccluded:eccentricity + (1|subjectID)'    }    {'identity'}    213.23        20       22.1      {'yes'} 
-     28     {'dprime ~ 1  + fractionOccluded:eccentricity + (1|subjectID)'                                          }    {'identity'}    213.81        19       19.7      {'yes'} 
-     29     {'dprime ~ 1  + omn + fractionOccluded:eccentricity + (1|subjectID)'                                    }    {'identity'}    215.22      19.4       20.8      {'yes'} 
-     30     {'dprime ~ 1  + eccentricity:omn + fractionOccluded:eccentricity + (1|subjectID)'                       }    {'identity'}    215.56      18.8       20.3      {'yes'} 
-     31     {'dprime ~ 1  + eccentricity + fractionOccluded:eccentricity + (1|subjectID)'                           }    {'identity'}     215.8      18.3       19.8      {'yes'} 
-     32     {'dprime ~ 1  + omn + eccentricity:omn + fractionOccluded:eccentricity + (1|subjectID)'                 }    {'identity'}    217.04      18.8         21      {'yes'} 
-     33     {'dprime ~ 1  + eccentricity + omn + fractionOccluded:eccentricity + (1|subjectID)'                     }    {'identity'}    217.09      18.7       20.9      {'yes'} 
-     34     {'dprime ~ 1  + eccentricity + eccentricity:omn + fractionOccluded:eccentricity + (1|subjectID)'        }    {'identity'}    217.41      18.2       20.4      {'yes'} 
-     35     {'dprime ~ 1  + eccentricity + eccentricity:omn + (1|subjectID)'                                        }    {'identity'}    222.62        12       13.6      {'yes'} 
-     36     {'dprime ~ 1  + eccentricity + omn + (1|subjectID)'                                                     }    {'identity'}    222.96      11.8       13.4      {'yes'} 
-     37     {'dprime ~ 1  + eccentricity + (1|subjectID)'                                                           }    {'identity'}    222.98       9.8       10.6      {'yes'} 
-     38     {'dprime ~ 1  + eccentricity + omn + eccentricity:omn + (1|subjectID)'                                  }    {'identity'}     224.6      11.3       13.7      {'yes'} 
-     39     {'dprime ~ 1  + eccentricity:omn + (1|subjectID)'                                                       }    {'identity'}    226.48       7.1          8      {'yes'} 
-     40     {'dprime ~ 1  + omn + (1|subjectID)'                                                                    }    {'identity'}    226.53       7.5        8.3      {'yes'} 
-     41     {'dprime ~ 1  + omn + eccentricity:omn + (1|subjectID)'                                                 }    {'identity'}    227.08         8        9.7      {'yes'} 
-
- ------------------------------------------------------------------------------- 
-Summary of variable formats in best model
-                             Class                                    Range                                InModel    IsCategorical
-                        _______________    ____________________________________________________________    _______    _____________
-
-    subjectID           {'categorical'}    {[C1    C2    C3    C4    M1    M2    M3    M4    M5    M6]}     true          true     
-    fractionOccluded    {'double'     }    {[                                                0 0.9179]}     true          false    
-    eccentricity        {'double'     }    {[                                          0.5983 16.5688]}     true          false    
-
-Summary of best model
-
-Generalized linear mixed-effects model fit by PL
-
-Model information:
-    Number of observations             112
-    Fixed effects coefficients           4
-    Random effects coefficients         10
-    Covariance parameters                2
-    Distribution                    Normal
-    Link                            Identity
-    FitMethod                       MPL   
-
-Formula:
-    dprime ~ 1 + fractionOccluded*eccentricity + (1 | subjectID)
-
-Model fit statistics:
-    AIC       BIC      LogLikelihood    Deviance
-    199.09    215.4    -93.545          187.09  
-
-Fixed effects coefficients (95% CIs):
-    Name                                     Estimate     SE          tStat  
-    {'(Intercept)'                  }           1.4016     0.15804     8.8687
-    {'fractionOccluded'             }          -1.9339     0.42836    -4.5146
-    {'eccentricity'                 }        -0.052073    0.024641    -2.1133
-    {'fractionOccluded:eccentricity'}          0.18919      0.0789     2.3978
-
-
-    DF     pValue        Lower       Upper     
-    108    1.7201e-14      1.0884        1.7149
-    108    1.6243e-05      -2.783       -1.0848
-    108      0.036878    -0.10091    -0.0032311
-    108      0.018211    0.032791       0.34558
-
-Random effects covariance parameters:
-Group: subjectID (10 Levels)
-    Name1                  Name2                  Type           Estimate
-    {'(Intercept)'}        {'(Intercept)'}        {'std'}        0.24988 
-
-Group: Error
-    Name                        Estimate
-    {'sqrt(Dispersion)'}        0.53252 
-
-AIC: 199.0906
-Adjusted R^2: 31.5%
-R^2: 33.3%
-Residuals: Kolmogorov test for normality (alpha 5%):  KS = 0.10, p = 0.1935
-Residuals are normal
-
-    RANDOM EFFECT COEFFICIENTS: DFMETHOD = 'RESIDUAL', ALPHA = 0.01
-
-    Group                Level         Name                   Estimate 
-    {'subjectID'}        {'C1'}        {'(Intercept)'}          0.30919
-    {'subjectID'}        {'C2'}        {'(Intercept)'}          0.19454
-    {'subjectID'}        {'C3'}        {'(Intercept)'}          0.14062
-    {'subjectID'}        {'C4'}        {'(Intercept)'}         -0.35356
-    {'subjectID'}        {'M1'}        {'(Intercept)'}        -0.082208
-    {'subjectID'}        {'M2'}        {'(Intercept)'}         0.051627
-    {'subjectID'}        {'M3'}        {'(Intercept)'}         -0.23351
-    {'subjectID'}        {'M4'}        {'(Intercept)'}         -0.11914
-    {'subjectID'}        {'M5'}        {'(Intercept)'}         0.090815
-    {'subjectID'}        {'M6'}        {'(Intercept)'}        0.0016246
-
-
-    SEPred     tStat        DF     pValue      Lower        Upper   
-    0.13013        2.376    108    0.019263    -0.032027     0.65041
-    0.13063       1.4892    108     0.13934     -0.14799     0.53707
-    0.14128      0.99535    108     0.32179     -0.22982     0.51106
-    0.14944      -2.3659    108    0.019768     -0.74539    0.038284
-    0.20079     -0.40942    108     0.68304      -0.6087     0.44429
-     0.2002      0.25787    108       0.797     -0.47333     0.57658
-    0.19879      -1.1747    108      0.2427     -0.75475     0.28772
-    0.19987     -0.59606    108     0.55239     -0.64323     0.40496
-    0.19881      0.45678    108     0.64874      -0.4305     0.61213
-     0.1765    0.0092047    108     0.99267     -0.46118     0.46443
-
-No adjustment for multiple comparisons
-                  Name                   Estimate      tStat     DF       pValue      adj_pValue    H0_reject
-    _________________________________    _________    _______    ___    __________    __________    _________
-
-    {'fractionOccluded'             }      -1.9339    -4.5146    108    1.6243e-05    1.6243e-05      true   
-    {'fractionOccluded:eccentricity'}      0.18919     2.3978    108      0.018211      0.018211      true   
-    {'eccentricity'                 }    -0.052073    -2.1133    108      0.036878      0.036878      true   
-
-Significant effect of fractionOccluded (t(108) = -4.51, adjusted p = 0)
-Significant effect of fractionOccluded:eccentricity (t(108) = 2.4, adjusted p = 0.0182)
-Significant effect of eccentricity (t(108) = -2.11, adjusted p = 0.0369)
-Local effect size for fractionOccluded : Cohen s f2 = 0.2 (medium)
-Local effect size for eccentricity : Cohen s f2 = 0.03 (small)
-Local effect size for fractionOccluded:eccentricity : Cohen s f2 = 0.05 (small)
- ------------------------------------------------------------------------------- 
-
-ans =
-
-  3&times;7 table
-
-                      Name                       Estimate      tStat     DF       pValue      adj_pValue    H0_reject
-    _________________________________________    _________    _______    ___    __________    __________    _________
-
-    {'dprime: fractionOccluded'             }      -1.9339    -4.5146    108    1.6243e-05    1.6243e-05      true   
-    {'dprime: fractionOccluded:eccentricity'}      0.18919     2.3978    108      0.018211      0.018211      true   
-    {'dprime: eccentricity'                 }    -0.052073    -2.1133    108      0.036878      0.036878      true   
-
-</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_03.png" alt=""> <pre class="codeoutput">Warning: Iteration limit reached. 
-The first model is undeniably the best fit for the data with best AIC but also best adj. R2 and best R2.
-Interpretation: there is mostly a medium effect of fraction occluded. There is also a small effect of eccentricity and a small interaction effect between them.
-Larger eccentricities and fraction occluded are associated with worse d' results, and interacting, with the effect of fraction occluded decreasing with larger eccentricities.
-When running the first model that includes OMN to see the effect of oculo-motor noise, we find that its effect is dubious and non-significant.
-</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_04.png" alt=""> <h2 id="5">Same analysis restrained to fixation data only</h2><p>restrain data to fixation</p><pre class="codeinput">dataFixation = data(data.condition==<span class="string">'fix'</span>,:);
+</pre><h2 id="4">Primary hypotheses on d' - fixation data only</h2><div><ul><li>Explore how the data can be explained by oculomotor noise, fraction occluded and eccentricity</li><li>Hypotheses:</li><li>more eccentric stimuli result in worse d'</li><li>more fraction occluded for the stimuli result in worse d'</li><li>more oculomotor noise result in worse d'</li></ul></div><pre class="codeinput"><span class="comment">% restrain data to fixation</span>
+dataFixation = data(data.condition==<span class="string">'fix'</span>,:);
 disp(dataFixation(1:10,:))
 dispi(size(dataFixation,1),<span class="string">' lines of data found.'</span>)
 
@@ -397,6 +164,8 @@ h=subplot(1,3,3);       plot_interaction(dataFixation.dprime, (dataFixation.ecce
 saveas(gcf,fullfile(figure_path,<span class="string">'fixation_dprime_GLME_effects.fig'</span>)); snapnow; close;
 disp(<span class="string">'Interpretation: there is no good model of the data, other than an intercept model. The first 3 best gave no significant factors.'</span>)
 disp(<span class="string">'Figures are only here for comparison.'</span>)
+disp(<span class="string">'To get (non-significant) p-values, we run the model #41.'</span>)
+display_model(mdls{41}, model)
 </pre><pre class="codeoutput">    subjectID    conditionCode      eyesTested      status        scotoma        condition      direction      dprime     fractionOccluded    eccentricity      omn   
     _________    _____________    ______________    _______    ______________    _________    _____________    _______    ________________    ____________    ________
 
@@ -413,10 +182,10 @@ disp(<span class="string">'Figures are only here for comparison.'</span>)
 
 36 lines of data found.
 d' - Wilcoxon-Mann&#8211;Whitney (signed-ranks) U = 580, p = 0.0821
-Data are not significantly different, so let's group them
-Kolmogorov-Smirnov test for normality:  KS = 0.09, p = 0.8744
+Data are not significantly different, but let's keep them separated
+Kolmogorov-Smirnov tests for normality:  Group 1 - KS = 0.11, p = 0.8442 and Group 2 - KS = 0.22, p = 0.8383
 Data are not distributed differently than normal
-</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_05.png" alt=""> <pre class="codeoutput">Collinearity
+</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_01.png" alt=""> <pre class="codeoutput">Collinearity
 Lines and columns are ordered as eccentricity,fractionOccluded and OMN.
 
 Tau =
@@ -433,7 +202,7 @@ PValue =
     0.9246    0.6924    1.0000
 
 No particular worries for collinearity given all correlations are well &lt;0.8.
-</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_06.png" alt=""> <pre class="codeoutput">Running 41 GLMEs...
+</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_02.png" alt=""> <pre class="codeoutput">Running 41 GLMEs...
 We tested 41 models.
     Rank                                                     formula                                                         link         AIC      adj.R2(%)    R2(%)    norm.res.
     ____    _________________________________________________________________________________________________________    ____________    ______    _________    _____    _________
@@ -578,9 +347,120 @@ ans =
 
     {'dprime: fractionOccluded:omn'}    -0.6984     -0.58581    34    0.56187     0.56187        false  
 
-</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_07.png" alt=""> <img vspace="5" hspace="5" src="GLME_smooth_pursuit_08.png" alt=""> <pre class="codeoutput">Interpretation: there is no good model of the data, other than an intercept model. The first 3 best gave no significant factors.
+</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_03.png" alt=""> <img vspace="5" hspace="5" src="GLME_smooth_pursuit_04.png" alt=""> <pre class="codeoutput">Interpretation: there is no good model of the data, other than an intercept model. The first 3 best gave no significant factors.
 Figures are only here for comparison.
-</pre><h2 id="6">Same analysis restrained to pursuit data only</h2><p>restrain data to fixation</p><pre class="codeinput">dataPursuit = data(data.condition==<span class="string">'pursuit'</span>,:);
+To get (non-significant) p-values, we run the model #41.
+Summary of variable formats in best model
+                             Class                                 Range                             InModel    IsCategorical
+                        _______________    ______________________________________________________    _______    _____________
+
+    subjectID           {'categorical'}    {[C1    C2    C3    C4    M1    M3    M4    M5    M6]}     true          true     
+    fractionOccluded    {'double'     }    {[                                          0 0.6190]}     true          false    
+    eccentricity        {'double'     }    {[                                     1.4722 9.1094]}     true          false    
+    omn                 {'double'     }    {[                                     0.0425 1.8360]}     true          false    
+
+Summary of best model
+
+Generalized linear mixed-effects model fit by PL
+
+Model information:
+    Number of observations              36
+    Fixed effects coefficients           4
+    Random effects coefficients          9
+    Covariance parameters                2
+    Distribution                    Normal
+    Link                            Identity
+    FitMethod                       MPL   
+
+Formula:
+    dprime ~ 1 + fractionOccluded + eccentricity + omn + (1 | subjectID)
+
+Model fit statistics:
+    AIC       BIC       LogLikelihood    Deviance
+    60.064    69.565    -24.032          48.064  
+
+Fixed effects coefficients (95% CIs):
+    Name                        Estimate     SE          tStat       DF
+    {'(Intercept)'     }          0.73824     0.25091      2.9423    32
+    {'fractionOccluded'}         -0.06373     0.41959    -0.15189    32
+    {'eccentricity'    }        0.0065552    0.039966     0.16402    32
+    {'omn'             }        -0.064352     0.28467    -0.22606    32
+
+
+    pValue       Lower        Upper   
+    0.0060158      0.22716      1.2493
+      0.88023      -0.9184     0.79094
+      0.87075    -0.074853    0.087963
+       0.8226     -0.64421     0.51551
+
+Random effects covariance parameters:
+Group: subjectID (9 Levels)
+    Name1                  Name2                  Type           Estimate
+    {'(Intercept)'}        {'(Intercept)'}        {'std'}        0.3087  
+
+Group: Error
+    Name                        Estimate
+    {'sqrt(Dispersion)'}        0.41611 
+
+AIC: 60.0642
+Adjusted R^2: 25.7%
+R^2: 32%
+Residuals: Kolmogorov test for normality (alpha 5%):  KS = 0.11, p = 0.7453
+Residuals are normal
+
+    RANDOM EFFECT COEFFICIENTS: DFMETHOD = 'RESIDUAL', ALPHA = 0.01
+
+    Group                Level         Name                   Estimate
+    {'subjectID'}        {'C1'}        {'(Intercept)'}         0.31879
+    {'subjectID'}        {'C2'}        {'(Intercept)'}          0.2879
+    {'subjectID'}        {'C3'}        {'(Intercept)'}         0.13846
+    {'subjectID'}        {'C4'}        {'(Intercept)'}         -0.5087
+    {'subjectID'}        {'M1'}        {'(Intercept)'}        -0.12326
+    {'subjectID'}        {'M3'}        {'(Intercept)'}        -0.12093
+    {'subjectID'}        {'M4'}        {'(Intercept)'}        -0.05936
+    {'subjectID'}        {'M5'}        {'(Intercept)'}        0.035192
+    {'subjectID'}        {'M6'}        {'(Intercept)'}        0.031905
+
+
+    SEPred     tStat       DF    pValue      Lower       Upper   
+    0.17871      1.7838    32    0.083938    -0.17061     0.80819
+    0.17772        1.62    32     0.11504    -0.19877     0.77457
+      0.195     0.71007    32      0.4828    -0.39554     0.67246
+     0.2034      -2.501    32    0.017695     -1.0657    0.048296
+    0.25645    -0.48066    32     0.63403    -0.82554     0.57901
+    0.25352    -0.47699    32     0.63661    -0.81518     0.57333
+     0.2674    -0.22199    32     0.82573    -0.79164     0.67292
+    0.23049     0.15268    32     0.87961    -0.59601      0.6664
+    0.27446     0.11624    32     0.90818    -0.71971     0.78352
+
+No adjustment for multiple comparisons
+            Name            Estimate      tStat      DF    pValue     adj_pValue    H0_reject
+    ____________________    _________    ________    __    _______    __________    _________
+
+    {'omn'             }    -0.064352    -0.22606    32     0.8226      0.8226        false  
+    {'eccentricity'    }    0.0065552     0.16402    32    0.87075     0.87075        false  
+    {'fractionOccluded'}     -0.06373    -0.15189    32    0.88023     0.88023        false  
+
+No significant effect of omn (t(32) = -0.23, adjusted p = 0.8226)
+No significant effect of eccentricity (t(32) = 0.16, adjusted p = 0.8707)
+No significant effect of fractionOccluded (t(32) = -0.15, adjusted p = 0.8802)
+Local effect size for fractionOccluded : Cohen s f2 = 0 (dubious)
+Local effect size for eccentricity : Cohen s f2 = 0 (dubious)
+Local effect size for omn : Cohen s f2 = 0 (dubious)
+ ------------------------------------------------------------------------------- 
+
+ans =
+
+  3&times;7 table
+
+                Name                Estimate      tStat      DF    pValue     adj_pValue    H0_reject
+    ____________________________    _________    ________    __    _______    __________    _________
+
+    {'dprime: omn'             }    -0.064352    -0.22606    32     0.8226      0.8226        false  
+    {'dprime: eccentricity'    }    0.0065552     0.16402    32    0.87075     0.87075        false  
+    {'dprime: fractionOccluded'}     -0.06373    -0.15189    32    0.88023     0.88023        false  
+
+</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_05.png" alt=""> <h2 id="5">Same analysis restrained to pursuit data only</h2><div><ul><li>restrain data to fixation</li></ul></div><pre class="codeinput">dataPursuit = data(data.condition==<span class="string">'pursuit'</span>,:);
 disp(dataPursuit(1:10,:))
 dispi(size(dataPursuit,1),<span class="string">' lines of data found.'</span>)
 
@@ -649,10 +529,10 @@ disp(<span class="string">'When running the first model that includes OMN to see
 
 76 lines of data found.
 d' - Wilcoxon-Mann&#8211;Whitney (signed-ranks) U = 2516, p = 0.0839
-Data are not significantly different, so let's group them
-Kolmogorov-Smirnov test for normality:  KS = 0.10, p = 0.3681
+Data are not significantly different, but let's keep them separated
+Kolmogorov-Smirnov tests for normality:  Group 1 - KS = 0.13, p = 0.2568 and Group 2 - KS = 0.16, p = 0.8037
 Data are not distributed differently than normal
-</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_09.png" alt=""> <pre class="codeoutput">Collinearity
+</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_06.png" alt=""> <pre class="codeoutput">Collinearity
 Lines and columns are ordered as eccentricity,fractionOccluded and OMN.
 
 Tau =
@@ -669,7 +549,7 @@ PValue =
     0.0000    0.8928    1.0000
 
 No particular worries for collinearity given all correlations are well &lt;0.8.
-</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_10.png" alt=""> <pre class="codeoutput">Running 41 GLMEs...
+</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_07.png" alt=""> <pre class="codeoutput">Running 41 GLMEs...
 We tested 41 models.
     Rank                                                     formula                                                         link         AIC      adj.R2(%)    R2(%)    norm.res.
     ____    _________________________________________________________________________________________________________    ____________    ______    _________    _____    _________
@@ -828,11 +708,245 @@ ans =
     {'dprime: fractionOccluded:eccentricity'}      0.18517     2.3053    72      0.024037      0.024037      true   
     {'dprime: eccentricity'                 }    -0.055567    -2.1132    72       0.03805       0.03805      true   
 
-</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_11.png" alt=""> <img vspace="5" hspace="5" src="GLME_smooth_pursuit_12.png" alt=""> <pre class="codeoutput">The first model is undeniably the best fit for the data with best AIC but also best adj. R2 and best R2.
+</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_08.png" alt=""> <img vspace="5" hspace="5" src="GLME_smooth_pursuit_09.png" alt=""> <pre class="codeoutput">The first model is undeniably the best fit for the data with best AIC but also best adj. R2 and best R2.
 Interpretation: there is mostly a large effect of fraction occluded. There is also a small effect of eccentricity and a small interaction effect between them.
 Larger eccentricities and fraction occluded are associated with worse d' results, and interacting, with the effect of fraction occluded decreasing with larger eccentricities.
 When running the first model that includes OMN to see the effect of oculo-motor noise, we find that its effect is dubious and non-significant.
-</pre><h2 id="7">debugging</h2><pre class="codeinput"><span class="keyword">catch</span> err
+</pre><h2 id="6">Same analysis for all conditions taken together</h2><div><ul><li>Additionnal analysis not included in the report.</li></ul></div><pre class="codeinput"><span class="comment">% explore which distribution is correct</span>
+check_distrib_indep(data.dprime(data.status==<span class="string">'control'</span>),data.dprime(data.status==<span class="string">'patient'</span>),<span class="string">'d'''</span>);
+disp(<span class="string">'Data are not distributed differently than normal.'</span>)
+saveas(gcf,fullfile(figure_path,<span class="string">'dprime_distribution.fig'</span>)); snapnow;
+
+<span class="comment">% Only apply the collinearity analysis on continuous predictors</span>
+<span class="comment">% Use Kendall correlations that are more powerful when using small samples</span>
+disp(<span class="string">'Collinearity'</span>)
+disp(<span class="string">'Lines and columns are ordered as eccentricity,fractionOccluded and OMN.'</span>)
+[Tau,PValue] = corrplot2(data(:,{<span class="string">'eccentricity'</span>,<span class="string">'fractionOccluded'</span>,<span class="string">'omn'</span>}),<span class="string">'type'</span>,<span class="string">'Kendall'</span>)
+disp(<span class="string">'No particular worries for collinearity given all correlations are well &lt;0.8.'</span>)
+saveas(gcf,fullfile(figure_path,<span class="string">'factor_collinearity.fig'</span>)); snapnow; close;
+
+<span class="comment">% define a model structure</span>
+<span class="comment">% a table with the data, here called data</span>
+model.data = data;
+<span class="comment">% the name of the dependent variable in the data structure, here it is data.initial_work_mem</span>
+model.dv = <span class="string">'dprime'</span>;
+<span class="comment">% its distribution among poisson, normal, gamma, inverse gaussian, binomial as previously determined</span>
+model.distribution = <span class="string">'normal'</span>;
+<span class="comment">% the maximal nb of factors to explore in the model</span>
+model.max_nb_factors = 4; <span class="comment">% n=10 so 100 data are used to estimate subjects' random effects (1 factor). 16 data can be used to estimate 2 more factors - we add 1 so that we can also look at the effect of non-significant factors.</span>
+model.solid_factors = {<span class="string">'(1|subjectID)'</span>}; <span class="comment">%keep these between {}</span>
+<span class="comment">% a list of possible factors to be included, that can be removed if needed, and the interactions terms to explore</span>
+model.liquid_factors = {<span class="string">'eccentricity'</span>,<span class="string">'omn'</span>,<span class="string">'fractionOccluded'</span>,<span class="string">'fractionOccluded:omn'</span>,<span class="string">'eccentricity:omn'</span>,<span class="string">'fractionOccluded:eccentricity'</span>}; <span class="comment">%keep these between {}</span>
+<span class="comment">% a list of potential model links</span>
+model.links = {<span class="string">'identity'</span>};
+<span class="comment">% outliers/subjects to be removed - can be left empty</span>
+model.exclude = [];
+<span class="comment">% no warnings if 1 - careful with that option</span>
+model.warning_off = 0;
+<span class="comment">% whether to use a GLM (0) or a GLME (1).</span>
+model.glme = 1;
+
+<span class="comment">% run the model</span>
+mdls = all_glm(model);
+
+<span class="comment">% display diagnostics and results</span>
+display_model(mdls{1}, model) <span class="comment">%plot model ranked 1 - you can select any other models by rank according to the results on the various indicators provided</span>
+saveas(gcf,fullfile(figure_path,<span class="string">'dprime_GLME_diagnostics.fig'</span>)); snapnow; close;
+figure(<span class="string">'Color'</span>, <span class="string">'w'</span>, <span class="string">'units'</span>,<span class="string">'normalized'</span>,<span class="string">'outerposition'</span>,[0.1 0.1 0.8 0.6]);
+h=subplot(1,3,1);       plot_covariate_effect(data.dprime, data.fractionOccluded.*100, h, <span class="string">'fraction occluded (%)'</span>, <span class="string">'d prime'</span>, 0, 0, mdls{1},1,model);
+h=subplot(1,3,2);       plot_covariate_effect(data.dprime, data.eccentricity, h, <span class="string">'eccentricity (deg)'</span>, <span class="string">'d prime'</span>, 0, 0, mdls{1},1,model);
+h=subplot(1,3,3);       plot_interaction(data.dprime, (data.fractionOccluded&lt;=median(data.fractionOccluded)),data.eccentricity, h, <span class="string">'eccentricity'</span>,<span class="string">'d prime'</span>, {<span class="string">'fraction occluded &gt; median'</span>,<span class="string">'fraction occluded &lt;= median'</span>},mdls{1}, 1, model); <span class="comment">% median is 12.8%</span>
+disp(<span class="string">'The first model is undeniably the best fit for the data with best AIC but also best adj. R2 and best R2.'</span>)
+disp(<span class="string">'Interpretation: there is mostly a medium effect of fraction occluded. There is also a small effect of eccentricity and a small interaction effect between them.'</span>)
+disp(<span class="string">'Larger eccentricities and fraction occluded are associated with worse d'' results, and interacting, with the effect of fraction occluded decreasing with larger eccentricities.'</span>)
+disp(<span class="string">'When running the first model that includes OMN to see the effect of oculo-motor noise, we find that its effect is dubious and non-significant.'</span>)
+saveas(gcf,fullfile(figure_path,<span class="string">'dprime_GLME_effects.fig'</span>)); snapnow; close;
+</pre><pre class="codeoutput">d' - Wilcoxon-Mann&#8211;Whitney (signed-ranks) U = 5459, p = 0.0181
+Data are significantly different, so let's keep them separated
+Kolmogorov-Smirnov tests for normality:  Group 1 - KS = 0.10, p = 0.3028 and Group 2 - KS = 0.19, p = 0.3909
+Data are not distributed differently than normal.
+</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_10.png" alt=""> <pre class="codeoutput">Collinearity
+Lines and columns are ordered as eccentricity,fractionOccluded and OMN.
+
+Tau =
+
+    1.0000    0.2555    0.1429
+    0.2555    1.0000    0.0501
+    0.1429    0.0501    1.0000
+
+
+PValue =
+
+    1.0000    0.0001    0.0257
+    0.0001    1.0000    0.4394
+    0.0257    0.4394    1.0000
+
+No particular worries for collinearity given all correlations are well &lt;0.8.
+</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_11.png" alt=""> <pre class="codeoutput">Running 41 GLMEs...
+We tested 41 models.
+    Rank                                                     formula                                                         link         AIC      adj.R2(%)    R2(%)    norm.res.
+    ____    _________________________________________________________________________________________________________    ____________    ______    _________    _____    _________
+
+      1     {'dprime ~ 1  + eccentricity + fractionOccluded + fractionOccluded:eccentricity + (1|subjectID)'        }    {'identity'}    199.09      31.5       33.3      {'yes'} 
+      2     {'dprime ~ 1  + fractionOccluded + (1|subjectID)'                                                       }    {'identity'}    201.11      29.3       29.9      {'yes'} 
+      3     {'dprime ~ 1  + fractionOccluded + fractionOccluded:eccentricity + (1|subjectID)'                       }    {'identity'}    201.37        30       31.3      {'yes'} 
+      4     {'dprime ~ 1  + eccentricity + fractionOccluded + (1|subjectID)'                                        }    {'identity'}    202.68      28.7         30      {'yes'} 
+      5     {'dprime ~ 1  + fractionOccluded + fractionOccluded:omn + (1|subjectID)'                                }    {'identity'}    202.77      28.5       29.8      {'yes'} 
+      6     {'dprime ~ 1  + fractionOccluded + eccentricity:omn + fractionOccluded:eccentricity + (1|subjectID)'    }    {'identity'}    202.81      29.3       31.2      {'yes'} 
+      7     {'dprime ~ 1  + fractionOccluded + fractionOccluded:omn + fractionOccluded:eccentricity + (1|subjectID)'}    {'identity'}    202.82      29.3       31.2      {'yes'} 
+      8     {'dprime ~ 1  + omn + fractionOccluded + (1|subjectID)'                                                 }    {'identity'}    202.92      29.1       30.4      {'yes'} 
+      9     {'dprime ~ 1  + fractionOccluded + eccentricity:omn + (1|subjectID)'                                    }    {'identity'}    203.08      28.5       29.8      {'yes'} 
+     10     {'dprime ~ 1  + omn + fractionOccluded + eccentricity:omn + (1|subjectID)'                              }    {'identity'}    203.25      29.9       31.8      {'yes'} 
+     11     {'dprime ~ 1  + omn + fractionOccluded + fractionOccluded:eccentricity + (1|subjectID)'                 }    {'identity'}    203.34      29.5       31.4      {'yes'} 
+     12     {'dprime ~ 1  + omn + fractionOccluded + fractionOccluded:omn + (1|subjectID)'                          }    {'identity'}    203.73      29.1         31      {'yes'} 
+     13     {'dprime ~ 1  + eccentricity + omn + fractionOccluded + (1|subjectID)'                                  }    {'identity'}    203.84      29.2       31.1      {'yes'} 
+     14     {'dprime ~ 1  + eccentricity + fractionOccluded + eccentricity:omn + (1|subjectID)'                     }    {'identity'}    204.47      28.4       30.3      {'yes'} 
+     15     {'dprime ~ 1  + eccentricity + fractionOccluded + fractionOccluded:omn + (1|subjectID)'                 }    {'identity'}    204.48      27.9       29.9      {'yes'} 
+     16     {'dprime ~ 1  + fractionOccluded + fractionOccluded:omn + eccentricity:omn + (1|subjectID)'             }    {'identity'}    204.74      27.9       29.9      {'yes'} 
+     17     {'dprime ~ 1  + eccentricity + omn + fractionOccluded:omn + (1|subjectID)'                              }    {'identity'}    206.41      26.6       28.6      {'yes'} 
+     18     {'dprime ~ 1  + omn + fractionOccluded:omn + (1|subjectID)'                                             }    {'identity'}    207.72      24.6       25.9      {'yes'} 
+     19     {'dprime ~ 1  + eccentricity + fractionOccluded:omn + eccentricity:omn + (1|subjectID)'                 }    {'identity'}    208.05      24.6       26.6      {'yes'} 
+     20     {'dprime ~ 1  + omn + fractionOccluded:omn + eccentricity:omn + (1|subjectID)'                          }    {'identity'}    208.38      25.3       27.3      {'no' } 
+     21     {'dprime ~ 1  + omn + fractionOccluded:omn + fractionOccluded:eccentricity + (1|subjectID)'             }    {'identity'}    208.83      24.8       26.9      {'yes'} 
+     22     {'dprime ~ 1  + fractionOccluded:omn + eccentricity:omn + (1|subjectID)'                                }    {'identity'}    211.12        21       22.4      {'yes'} 
+     23     {'dprime ~ 1  + fractionOccluded:omn + fractionOccluded:eccentricity + (1|subjectID)'                   }    {'identity'}    211.24      20.7       22.1      {'yes'} 
+     24     {'dprime ~ 1  + fractionOccluded:omn + (1|subjectID)'                                                   }    {'identity'}    211.26      19.1       19.8      {'yes'} 
+     25     {'dprime ~ 1  + fractionOccluded:omn + eccentricity:omn + fractionOccluded:eccentricity + (1|subjectID)'}    {'identity'}     211.3      22.3       24.4      {'yes'} 
+     26     {'dprime ~ 1  + eccentricity + fractionOccluded:omn + (1|subjectID)'                                    }    {'identity'}    212.87      18.5       19.9      {'yes'} 
+     27     {'dprime ~ 1  + eccentricity + fractionOccluded:omn + fractionOccluded:eccentricity + (1|subjectID)'    }    {'identity'}    213.23        20       22.1      {'yes'} 
+     28     {'dprime ~ 1  + fractionOccluded:eccentricity + (1|subjectID)'                                          }    {'identity'}    213.81        19       19.7      {'yes'} 
+     29     {'dprime ~ 1  + omn + fractionOccluded:eccentricity + (1|subjectID)'                                    }    {'identity'}    215.22      19.4       20.8      {'yes'} 
+     30     {'dprime ~ 1  + eccentricity:omn + fractionOccluded:eccentricity + (1|subjectID)'                       }    {'identity'}    215.56      18.8       20.3      {'yes'} 
+     31     {'dprime ~ 1  + eccentricity + fractionOccluded:eccentricity + (1|subjectID)'                           }    {'identity'}     215.8      18.3       19.8      {'yes'} 
+     32     {'dprime ~ 1  + omn + eccentricity:omn + fractionOccluded:eccentricity + (1|subjectID)'                 }    {'identity'}    217.04      18.8         21      {'yes'} 
+     33     {'dprime ~ 1  + eccentricity + omn + fractionOccluded:eccentricity + (1|subjectID)'                     }    {'identity'}    217.09      18.7       20.9      {'yes'} 
+     34     {'dprime ~ 1  + eccentricity + eccentricity:omn + fractionOccluded:eccentricity + (1|subjectID)'        }    {'identity'}    217.41      18.2       20.4      {'yes'} 
+     35     {'dprime ~ 1  + eccentricity + eccentricity:omn + (1|subjectID)'                                        }    {'identity'}    222.62        12       13.6      {'yes'} 
+     36     {'dprime ~ 1  + eccentricity + omn + (1|subjectID)'                                                     }    {'identity'}    222.96      11.8       13.4      {'yes'} 
+     37     {'dprime ~ 1  + eccentricity + (1|subjectID)'                                                           }    {'identity'}    222.98       9.8       10.6      {'yes'} 
+     38     {'dprime ~ 1  + eccentricity + omn + eccentricity:omn + (1|subjectID)'                                  }    {'identity'}     224.6      11.3       13.7      {'yes'} 
+     39     {'dprime ~ 1  + eccentricity:omn + (1|subjectID)'                                                       }    {'identity'}    226.48       7.1          8      {'yes'} 
+     40     {'dprime ~ 1  + omn + (1|subjectID)'                                                                    }    {'identity'}    226.53       7.5        8.3      {'yes'} 
+     41     {'dprime ~ 1  + omn + eccentricity:omn + (1|subjectID)'                                                 }    {'identity'}    227.08         8        9.7      {'yes'} 
+
+ ------------------------------------------------------------------------------- 
+Summary of variable formats in best model
+                             Class                                    Range                                InModel    IsCategorical
+                        _______________    ____________________________________________________________    _______    _____________
+
+    subjectID           {'categorical'}    {[C1    C2    C3    C4    M1    M2    M3    M4    M5    M6]}     true          true     
+    fractionOccluded    {'double'     }    {[                                                0 0.9179]}     true          false    
+    eccentricity        {'double'     }    {[                                          0.5983 16.5688]}     true          false    
+
+Summary of best model
+
+Generalized linear mixed-effects model fit by PL
+
+Model information:
+    Number of observations             112
+    Fixed effects coefficients           4
+    Random effects coefficients         10
+    Covariance parameters                2
+    Distribution                    Normal
+    Link                            Identity
+    FitMethod                       MPL   
+
+Formula:
+    dprime ~ 1 + fractionOccluded*eccentricity + (1 | subjectID)
+
+Model fit statistics:
+    AIC       BIC      LogLikelihood    Deviance
+    199.09    215.4    -93.545          187.09  
+
+Fixed effects coefficients (95% CIs):
+    Name                                     Estimate     SE          tStat  
+    {'(Intercept)'                  }           1.4016     0.15804     8.8687
+    {'fractionOccluded'             }          -1.9339     0.42836    -4.5146
+    {'eccentricity'                 }        -0.052073    0.024641    -2.1133
+    {'fractionOccluded:eccentricity'}          0.18919      0.0789     2.3978
+
+
+    DF     pValue        Lower       Upper     
+    108    1.7201e-14      1.0884        1.7149
+    108    1.6243e-05      -2.783       -1.0848
+    108      0.036878    -0.10091    -0.0032311
+    108      0.018211    0.032791       0.34558
+
+Random effects covariance parameters:
+Group: subjectID (10 Levels)
+    Name1                  Name2                  Type           Estimate
+    {'(Intercept)'}        {'(Intercept)'}        {'std'}        0.24988 
+
+Group: Error
+    Name                        Estimate
+    {'sqrt(Dispersion)'}        0.53252 
+
+AIC: 199.0906
+Adjusted R^2: 31.5%
+R^2: 33.3%
+Residuals: Kolmogorov test for normality (alpha 5%):  KS = 0.10, p = 0.1935
+Residuals are normal
+
+    RANDOM EFFECT COEFFICIENTS: DFMETHOD = 'RESIDUAL', ALPHA = 0.01
+
+    Group                Level         Name                   Estimate 
+    {'subjectID'}        {'C1'}        {'(Intercept)'}          0.30919
+    {'subjectID'}        {'C2'}        {'(Intercept)'}          0.19454
+    {'subjectID'}        {'C3'}        {'(Intercept)'}          0.14062
+    {'subjectID'}        {'C4'}        {'(Intercept)'}         -0.35356
+    {'subjectID'}        {'M1'}        {'(Intercept)'}        -0.082208
+    {'subjectID'}        {'M2'}        {'(Intercept)'}         0.051627
+    {'subjectID'}        {'M3'}        {'(Intercept)'}         -0.23351
+    {'subjectID'}        {'M4'}        {'(Intercept)'}         -0.11914
+    {'subjectID'}        {'M5'}        {'(Intercept)'}         0.090815
+    {'subjectID'}        {'M6'}        {'(Intercept)'}        0.0016246
+
+
+    SEPred     tStat        DF     pValue      Lower        Upper   
+    0.13013        2.376    108    0.019263    -0.032027     0.65041
+    0.13063       1.4892    108     0.13934     -0.14799     0.53707
+    0.14128      0.99535    108     0.32179     -0.22982     0.51106
+    0.14944      -2.3659    108    0.019768     -0.74539    0.038284
+    0.20079     -0.40942    108     0.68304      -0.6087     0.44429
+     0.2002      0.25787    108       0.797     -0.47333     0.57658
+    0.19879      -1.1747    108      0.2427     -0.75475     0.28772
+    0.19987     -0.59606    108     0.55239     -0.64323     0.40496
+    0.19881      0.45678    108     0.64874      -0.4305     0.61213
+     0.1765    0.0092047    108     0.99267     -0.46118     0.46443
+
+No adjustment for multiple comparisons
+                  Name                   Estimate      tStat     DF       pValue      adj_pValue    H0_reject
+    _________________________________    _________    _______    ___    __________    __________    _________
+
+    {'fractionOccluded'             }      -1.9339    -4.5146    108    1.6243e-05    1.6243e-05      true   
+    {'fractionOccluded:eccentricity'}      0.18919     2.3978    108      0.018211      0.018211      true   
+    {'eccentricity'                 }    -0.052073    -2.1133    108      0.036878      0.036878      true   
+
+Significant effect of fractionOccluded (t(108) = -4.51, adjusted p = 0)
+Significant effect of fractionOccluded:eccentricity (t(108) = 2.4, adjusted p = 0.0182)
+Significant effect of eccentricity (t(108) = -2.11, adjusted p = 0.0369)
+Local effect size for fractionOccluded : Cohen s f2 = 0.2 (medium)
+Local effect size for eccentricity : Cohen s f2 = 0.03 (small)
+Local effect size for fractionOccluded:eccentricity : Cohen s f2 = 0.05 (small)
+ ------------------------------------------------------------------------------- 
+
+ans =
+
+  3&times;7 table
+
+                      Name                       Estimate      tStat     DF       pValue      adj_pValue    H0_reject
+    _________________________________________    _________    _______    ___    __________    __________    _________
+
+    {'dprime: fractionOccluded'             }      -1.9339    -4.5146    108    1.6243e-05    1.6243e-05      true   
+    {'dprime: fractionOccluded:eccentricity'}      0.18919     2.3978    108      0.018211      0.018211      true   
+    {'dprime: eccentricity'                 }    -0.052073    -2.1133    108      0.036878      0.036878      true   
+
+</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_12.png" alt=""> <pre class="codeoutput">Warning: Iteration limit reached. 
+The first model is undeniably the best fit for the data with best AIC but also best adj. R2 and best R2.
+Interpretation: there is mostly a medium effect of fraction occluded. There is also a small effect of eccentricity and a small interaction effect between them.
+Larger eccentricities and fraction occluded are associated with worse d' results, and interacting, with the effect of fraction occluded decreasing with larger eccentricities.
+When running the first model that includes OMN to see the effect of oculo-motor noise, we find that its effect is dubious and non-significant.
+</pre><img vspace="5" hspace="5" src="GLME_smooth_pursuit_13.png" alt=""> <h2 id="7">debugging</h2><pre class="codeinput"><span class="keyword">catch</span> err
    keyboard
 <span class="keyword">end</span>
 <span class="keyword">end</span>
@@ -845,12 +959,9 @@ When running the first model that includes OMN to see the effect of oculo-motor 
 % * plots various graphs
 % * displays statistic conclusion messages
 % * saves figures from statistical analysis in figures folder
-% Inputs
-% None. The function must run from the analysis folder with the master datafile being located in data. 
-% Functions used in this code should all be located in shared_codes.
-% Outputs
-% None. But generates figures (folder figures), statistics (command window) and generates a joint markdown output in html 
-% by pressing Publish.
+% * Inputs: None. The function must run from the analysis folder with the master datafile being located in data. 
+% * Functions used in this code should all be located in shared_codes.
+% * Outputs: None. But generates figures (folder figures), statistics (command window) and generates a joint markdown output in html by pressing Publish.
 
 function GLME_smooth_pursuit
 try
@@ -883,64 +994,13 @@ disp('Data sample and size:')
 disp(data(1:10,:))
 dispi(size(data,1),' lines of data found.')
 
-%% Primary hypotheses on d'
-% Explore how the data can be explained by oculomotor noise, fraction occluded and eccentricity
-% Hypotheses: 
+%% Primary hypotheses on d' - fixation data only
+% * Explore how the data can be explained by oculomotor noise, fraction occluded and eccentricity
+% * Hypotheses: 
 % * more eccentric stimuli result in worse d'
 % * more fraction occluded for the stimuli result in worse d'
 % * more oculomotor noise result in worse d'
 
-% explore which distribution is correct
-check_distrib_indep(data.dprime(data.status=='control'),data.dprime(data.status=='patient'),'d''');
-disp('Data are not distributed differently than normal.')
-saveas(gcf,fullfile(figure_path,'dprime_distribution.fig')); snapnow;
-
-% Only apply the collinearity analysis on continuous predictors
-% Use Kendall correlations that are more powerful when using small samples
-disp('Collinearity')
-disp('Lines and columns are ordered as eccentricity,fractionOccluded and OMN.')
-[Tau,PValue] = corrplot2(data(:,{'eccentricity','fractionOccluded','omn'}),'type','Kendall')
-disp('No particular worries for collinearity given all correlations are well <0.8.')
-saveas(gcf,fullfile(figure_path,'factor_collinearity.fig')); snapnow; close;
-
-% define a model structure
-% a table with the data, here called data
-model.data = data;
-% the name of the dependent variable in the data structure, here it is data.initial_work_mem
-model.dv = 'dprime';
-% its distribution among poisson, normal, gamma, inverse gaussian, binomial as previously determined
-model.distribution = 'normal';
-% the maximal nb of factors to explore in the model
-model.max_nb_factors = 4; % n=10 so 100 data are used to estimate subjects' random effects (1 factor). 16 data can be used to estimate 2 more factors - we add 1 so that we can also look at the effect of non-significant factors.
-model.solid_factors = {'(1|subjectID)'}; %keep these between {}
-% a list of possible factors to be included, that can be removed if needed, and the interactions terms to explore
-model.liquid_factors = {'eccentricity','omn','fractionOccluded','fractionOccluded:omn','eccentricity:omn','fractionOccluded:eccentricity'}; %keep these between {}
-% a list of potential model links
-model.links = {'identity'};
-% outliers/subjects to be removed - can be left empty
-model.exclude = [];
-% no warnings if 1 - careful with that option
-model.warning_off = 0;
-% whether to use a GLM (0) or a GLME (1).
-model.glme = 1;
-
-% run the model
-mdls = all_glm(model);
-
-% display diagnostics and results
-display_model(mdls{1}, model) %plot model ranked 1 - you can select any other models by rank according to the results on the various indicators provided
-saveas(gcf,fullfile(figure_path,'dprime_GLME_diagnostics.fig')); snapnow; close;
-figure('Color', 'w', 'units','normalized','outerposition',[0.1 0.1 0.8 0.6]);
-h=subplot(1,3,1);       plot_covariate_effect(data.dprime, data.fractionOccluded.*100, h, 'fraction occluded (%)', 'd prime', 0, 0, mdls{1},1,model);
-h=subplot(1,3,2);       plot_covariate_effect(data.dprime, data.eccentricity, h, 'eccentricity (deg)', 'd prime', 0, 0, mdls{1},1,model);
-h=subplot(1,3,3);       plot_interaction(data.dprime, (data.fractionOccluded<=median(data.fractionOccluded)),data.eccentricity, h, 'eccentricity','d prime', {'fraction occluded > median','fraction occluded <= median'},mdls{1}, 1, model); % median is 12.8%
-disp('The first model is undeniably the best fit for the data with best AIC but also best adj. R2 and best R2.')
-disp('Interpretation: there is mostly a medium effect of fraction occluded. There is also a small effect of eccentricity and a small interaction effect between them.')
-disp('Larger eccentricities and fraction occluded are associated with worse d'' results, and interacting, with the effect of fraction occluded decreasing with larger eccentricities.')
-disp('When running the first model that includes OMN to see the effect of oculo-motor noise, we find that its effect is dubious and non-significant.')
-saveas(gcf,fullfile(figure_path,'dprime_GLME_effects.fig')); snapnow; close;
-
-%% Same analysis restrained to fixation data only
 % restrain data to fixation
 dataFixation = data(data.condition=='fix',:);
 disp(dataFixation(1:10,:))
@@ -993,9 +1053,11 @@ h=subplot(1,3,3);       plot_interaction(dataFixation.dprime, (dataFixation.ecce
 saveas(gcf,fullfile(figure_path,'fixation_dprime_GLME_effects.fig')); snapnow; close;
 disp('Interpretation: there is no good model of the data, other than an intercept model. The first 3 best gave no significant factors.')
 disp('Figures are only here for comparison.')
+disp('To get (non-significant) p-values, we run the model #41.')
+display_model(mdls{41}, model)
 
 %% Same analysis restrained to pursuit data only
-% restrain data to fixation
+% * restrain data to fixation
 dataPursuit = data(data.condition=='pursuit',:);
 disp(dataPursuit(1:10,:))
 dispi(size(dataPursuit,1),' lines of data found.')
@@ -1049,6 +1111,59 @@ disp('The first model is undeniably the best fit for the data with best AIC but 
 disp('Interpretation: there is mostly a large effect of fraction occluded. There is also a small effect of eccentricity and a small interaction effect between them.')
 disp('Larger eccentricities and fraction occluded are associated with worse d'' results, and interacting, with the effect of fraction occluded decreasing with larger eccentricities.')
 disp('When running the first model that includes OMN to see the effect of oculo-motor noise, we find that its effect is dubious and non-significant.')
+
+%% Same analysis for all conditions taken together
+% * Additionnal analysis not included in the report.
+
+% explore which distribution is correct
+check_distrib_indep(data.dprime(data.status=='control'),data.dprime(data.status=='patient'),'d''');
+disp('Data are not distributed differently than normal.')
+saveas(gcf,fullfile(figure_path,'dprime_distribution.fig')); snapnow;
+
+% Only apply the collinearity analysis on continuous predictors
+% Use Kendall correlations that are more powerful when using small samples
+disp('Collinearity')
+disp('Lines and columns are ordered as eccentricity,fractionOccluded and OMN.')
+[Tau,PValue] = corrplot2(data(:,{'eccentricity','fractionOccluded','omn'}),'type','Kendall')
+disp('No particular worries for collinearity given all correlations are well <0.8.')
+saveas(gcf,fullfile(figure_path,'factor_collinearity.fig')); snapnow; close;
+
+% define a model structure
+% a table with the data, here called data
+model.data = data;
+% the name of the dependent variable in the data structure, here it is data.initial_work_mem
+model.dv = 'dprime';
+% its distribution among poisson, normal, gamma, inverse gaussian, binomial as previously determined
+model.distribution = 'normal';
+% the maximal nb of factors to explore in the model
+model.max_nb_factors = 4; % n=10 so 100 data are used to estimate subjects' random effects (1 factor). 16 data can be used to estimate 2 more factors - we add 1 so that we can also look at the effect of non-significant factors.
+model.solid_factors = {'(1|subjectID)'}; %keep these between {}
+% a list of possible factors to be included, that can be removed if needed, and the interactions terms to explore
+model.liquid_factors = {'eccentricity','omn','fractionOccluded','fractionOccluded:omn','eccentricity:omn','fractionOccluded:eccentricity'}; %keep these between {}
+% a list of potential model links
+model.links = {'identity'};
+% outliers/subjects to be removed - can be left empty
+model.exclude = [];
+% no warnings if 1 - careful with that option
+model.warning_off = 0;
+% whether to use a GLM (0) or a GLME (1).
+model.glme = 1;
+
+% run the model
+mdls = all_glm(model);
+
+% display diagnostics and results
+display_model(mdls{1}, model) %plot model ranked 1 - you can select any other models by rank according to the results on the various indicators provided
+saveas(gcf,fullfile(figure_path,'dprime_GLME_diagnostics.fig')); snapnow; close;
+figure('Color', 'w', 'units','normalized','outerposition',[0.1 0.1 0.8 0.6]);
+h=subplot(1,3,1);       plot_covariate_effect(data.dprime, data.fractionOccluded.*100, h, 'fraction occluded (%)', 'd prime', 0, 0, mdls{1},1,model);
+h=subplot(1,3,2);       plot_covariate_effect(data.dprime, data.eccentricity, h, 'eccentricity (deg)', 'd prime', 0, 0, mdls{1},1,model);
+h=subplot(1,3,3);       plot_interaction(data.dprime, (data.fractionOccluded<=median(data.fractionOccluded)),data.eccentricity, h, 'eccentricity','d prime', {'fraction occluded > median','fraction occluded <= median'},mdls{1}, 1, model); % median is 12.8%
+disp('The first model is undeniably the best fit for the data with best AIC but also best adj. R2 and best R2.')
+disp('Interpretation: there is mostly a medium effect of fraction occluded. There is also a small effect of eccentricity and a small interaction effect between them.')
+disp('Larger eccentricities and fraction occluded are associated with worse d'' results, and interacting, with the effect of fraction occluded decreasing with larger eccentricities.')
+disp('When running the first model that includes OMN to see the effect of oculo-motor noise, we find that its effect is dubious and non-significant.')
+saveas(gcf,fullfile(figure_path,'dprime_GLME_effects.fig')); snapnow; close;
 
 %% debugging
 catch err

@@ -19,10 +19,10 @@ subplot(2,3,1); hist(dataGroup1); title('Group 1'); xlabel(header); xlim([minn m
 subplot(2,3,2); hist(dataGroup2); title('Group 2'); xlabel(header); xlim([minn maxx]);
 
 if h==0
-    disp('Data are not significantly different, so let''s group them')
-    [H1, P1, KSstat1] = kstest(zscore(data)); H2 = 0;
-        dispi('Kolmogorov-Smirnov test for normality:  KS = ',sprintf('%.2f',KSstat1),', p = ',sprintf('%.4f',P1));
-        subplot(2,3,3); hist(data); title('All groups'); xlabel(header); xlim([minn maxx]);
+    disp('Data are not significantly different, but let''s keep them separated')
+    [H1, P1, KSstat1] = kstest(zscore(dataGroup1)); [H2, P2, KSstat2] = kstest(zscore(dataGroup2));
+        dispi('Kolmogorov-Smirnov tests for normality:  Group 1 - KS = ',sprintf('%.2f',KSstat1),', p = ',sprintf('%.4f',P1), ...
+            ' and Group 2 - KS = ',sprintf('%.2f',KSstat2),', p = ',sprintf('%.4f',P2));
 else
     disp('Data are significantly different, so let''s keep them separated')
     [H1, P1, KSstat1] = kstest(zscore(dataGroup1)); [H2, P2, KSstat2] = kstest(zscore(dataGroup2));
